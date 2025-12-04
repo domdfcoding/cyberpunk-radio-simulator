@@ -27,8 +27,12 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 #
 
 # this package
-from cyberpunk_radio_simulator.scenes import Extractor
+from cyberpunk_radio_simulator.extractor import Extractor
 
 extractor = Extractor("/media/domdf/CP2077/Cyberpunk 2077", "data")
+
+# From quickest to slowest
+extractor.extract_station_logos()
 extractor.extract_advert_audio()
 extractor.extract_dj_audio()
+extractor.extract_radio_tracks()

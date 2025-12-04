@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #
-#  scenes.py
+#  extractor.py
 """
-Extract data from game scenes.
+Extract logic from game scenes, and audio files.
 """
 #
 #  Copyright © 2025 Dominic Davis-Foster <dominic@davis-foster.co.uk>
@@ -28,95 +28,28 @@ Extract data from game scenes.
 
 # stdlib
 from io import BytesIO
-from pathlib import PureWindowsPath
-from typing import IO, NamedTuple
+from typing import IO
 
 # 3rd party
-from cp2077_extractor.audio_data.adverts import AdvertData, adverts
+from cp2077_extractor.audio_data import SceneAudioData
+from cp2077_extractor.audio_data.adverts import adverts
 from cp2077_extractor.cr2w.io import parse_cr2w_buffer
-from cp2077_extractor.radio_dj import (
-		EventData,
-		find_graph_entry_points,
-		get_link_paths,
-		parse_radio_scene_graph,
-		# parse_subtitles
-		)
+from cp2077_extractor.radio_dj import parse_radio_scene_graph  # parse_subtitles
+from cp2077_extractor.radio_dj import EventData, find_graph_entry_points, get_link_paths
 from cp2077_extractor.redarchive_reader import REDArchive
 from cp2077_extractor.utils import transcode_file
+from cyberpunk_radio_extractor import extract_radio_songs
+from cyberpunk_radio_extractor.album_art import get_album_art, get_station_logos
 from domdf_python_tools.paths import PathPlus, TemporaryPathPlus
 from domdf_python_tools.typing import PathLike
 from moviepy.audio.AudioClip import CompositeAudioClip, concatenate_audioclips  # type: ignore[import-untyped]
 from moviepy.audio.io.AudioFileClip import AudioFileClip  # type: ignore[import-untyped]
 from networkx import Graph
 
+# this package
+from cyberpunk_radio_simulator.data import advert_scenes, dj_scenes, djs
+
 __all__ = ["Extractor"]
-
-
-class DJData(NamedTuple):
-	scene_file: str
-	station_name: str
-	audio_filename_prefix: str
-	general_audio: bool = False  # False for localised audio, True for audio_1_general.archive
-
-
-djs = [
-		DJData(
-				scene_file=r"radio_growl",
-				station_name="89.7 Growl FM",
-				audio_filename_prefix="ash_radio_growl",
-				),
-		DJData(
-				scene_file=r"radio_01_conspiracy",
-				station_name="107.3 Morro Rock Radio",
-				audio_filename_prefix="radio_max_mike_radio_ad_00_test",
-				general_audio=True
-				),
-		DJData(
-				scene_file=r"radio_00_news",
-				station_name="Stanley",
-				audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
-				)
-		]
-
-advert_scenes = {
-		PureWindowsPath(s).stem: s
-		for s in [
-				r"base\media\animated_billboards\scenes\ab_ad_caliente.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_chromanticore.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_foreign_body.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_mrstud.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_mrwhitey.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_nicola.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_orgiatic.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_slaughterhouse.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_sojasil.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_thrud.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_tiancha.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_vargas.scene",
-				r"base\media\animated_billboards\scenes\ab_ad_watson_whore.scene",
-				r"base\media\animated_billboards\scenes\ab_q003_01_all_foods_meat_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_q004_01_lizzies_bar_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_q104_01_kang_tao_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_q114_01_night_corp_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_q115_01_arasaka_propaganda.scene",
-				r"base\media\animated_billboards\scenes\ab_sq017_01_us_cracks_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_sq025_01_delamain_ad.scene",
-				r"base\media\animated_billboards\scenes\ab_sq032_01_arasaka_propaganda.scene",
-				r"base\media\animated_billboards\scenes\ab_sts_wat_nid_04_televangelist_ad.scene",
-				r"base\media\fluff\scenes\jefferson_peralez_ad\jefferson_peralez_ad.scene",
-				r"base\media\quests\scenes\q203_01_crystal_palace_info.scene",
-				]
-		}
-
-dj_scenes = {
-		PureWindowsPath(s).stem: s
-		for s in [
-				r"base\media\radio\scenes\radio_00_news.scene",
-				r"base\media\radio\scenes\radio_01_conspiracy.scene",
-				# r"base\media\radio\scenes\radio_02_police.scene",
-				r"base\media\radio\scenes\radio_growl.scene",
-				]
-		}
 
 
 class Extractor:
@@ -132,7 +65,10 @@ class Extractor:
 	audio_output_directory: PathPlus
 	advert_audio_directory: PathPlus
 	dj_audio_directory: PathPlus
+	stations_audio_directory: PathPlus
 	dj_data_directory: PathPlus
+	artwork_directory: PathPlus
+	station_logos_directory: PathPlus
 
 	gamedata_archive_file: PathPlus
 	soundbanks_archive_file: PathPlus
@@ -177,19 +113,29 @@ class Extractor:
 			self.output_directory.joinpath(".gitignore").write_clean('*')
 
 		self.audio_output_directory = self.output_directory / "audio"
-		self.audio_output_directory.maybe_make()
 
 		self.advert_audio_directory = self.audio_output_directory / "adverts"
-		self.advert_audio_directory.maybe_make()
+		self.advert_audio_directory.maybe_make(parents=True)
 
 		self.dj_audio_directory = self.audio_output_directory / "dj"
-		self.dj_audio_directory.maybe_make()
+		self.dj_audio_directory.maybe_make(parents=True)
+
+		self.stations_audio_directory = self.audio_output_directory / "stations"
+		self.stations_audio_directory.maybe_make(parents=True)
 
 		self.dj_data_directory = self.output_directory / "dj"
-		self.dj_data_directory.maybe_make()
+		self.dj_data_directory.maybe_make(parents=True)
+
+		self.artwork_directory = self.output_directory / "artwork"
+
+		self.station_logos_directory = self.artwork_directory / "stations"
+		self.station_logos_directory.maybe_make(parents=True)
 
 	def concatenate_advert_audio_clips(
-			self, events: list[EventData], ad_data: AdvertData, output_file: PathPlus
+			self,
+			events: list[EventData],
+			ad_data: SceneAudioData,
+			output_file: PathPlus,
 			) -> None:
 		"""
 		Extract individual audio files and combine together into a single file.
@@ -229,17 +175,18 @@ class Extractor:
 				final_clip: CompositeAudioClip = concatenate_audioclips(clips)
 				final_clip.write_audiofile(output_file)
 			else:
-				audio_filenames[0].rename(output_file)
+				audio_filenames[0].move(output_file.abspath())
 
 	def extract_audio(self, archive: REDArchive, fp: IO, filename: str, mp3_filename: PathPlus) -> None:
 		"""
 		Extract audio file from the archive, as MP3.
-		
+
 		:param archive:
 		:param fp: Open file handle to the archive.
 		:param filename: The file in the archive.
 		:param mp3_filename: Output filename.
 		"""
+
 		wem_filename = mp3_filename.with_suffix(".wem")
 		file = archive.file_list.find_filename(filename)
 		contents = archive.extract_file(fp, file)
@@ -310,3 +257,27 @@ class Extractor:
 
 		return graph, audio_events
 
+	def extract_radio_tracks(self) -> None:
+		"""
+		Extract the tracks that play on the radio stations.
+		"""
+
+		album_art_data = get_album_art(self.install_directory)
+
+		extract_radio_songs(
+				self.install_directory,
+				self.stations_audio_directory,
+				album_art_data=album_art_data,
+				jingles=True,
+				verbose=True,
+				)
+
+	def extract_station_logos(self) -> None:
+		"""
+		Extract the logos for the radio stations.
+		"""
+
+		station_logos = get_station_logos(self.install_directory)
+
+		for station_name, logo_png_bytes in station_logos.items():
+			self.station_logos_directory.joinpath(f"{station_name}.png").write_bytes(logo_png_bytes)
