@@ -31,3 +31,4 @@ from cyberpunk_radio_simulator.scenes import Extractor
 
 extractor = Extractor("/media/domdf/CP2077/Cyberpunk 2077", "data")
 extractor.extract_advert_audio()
+extractor.extract_dj_audio()

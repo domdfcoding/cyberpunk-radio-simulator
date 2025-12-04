@@ -29,11 +29,18 @@ Extract data from game scenes.
 # stdlib
 from io import BytesIO
 from pathlib import PureWindowsPath
+from typing import IO, NamedTuple
 
 # 3rd party
 from cp2077_extractor.audio_data.adverts import AdvertData, adverts
 from cp2077_extractor.cr2w.io import parse_cr2w_buffer
-from cp2077_extractor.radio_dj import EventData, parse_radio_scene_graph
+from cp2077_extractor.radio_dj import (
+		EventData,
+		find_graph_entry_points,
+		get_link_paths,
+		parse_radio_scene_graph,
+		# parse_subtitles
+		)
 from cp2077_extractor.redarchive_reader import REDArchive
 from cp2077_extractor.utils import transcode_file
 from domdf_python_tools.paths import PathPlus, TemporaryPathPlus
@@ -43,6 +50,33 @@ from moviepy.audio.io.AudioFileClip import AudioFileClip  # type: ignore[import-
 from networkx import Graph
 
 __all__ = ["Extractor"]
+
+
+class DJData(NamedTuple):
+	scene_file: str
+	station_name: str
+	audio_filename_prefix: str
+	general_audio: bool = False  # False for localised audio, True for audio_1_general.archive
+
+
+djs = [
+		DJData(
+				scene_file=r"radio_growl",
+				station_name="89.7 Growl FM",
+				audio_filename_prefix="ash_radio_growl",
+				),
+		DJData(
+				scene_file=r"radio_01_conspiracy",
+				station_name="107.3 Morro Rock Radio",
+				audio_filename_prefix="radio_max_mike_radio_ad_00_test",
+				general_audio=True
+				),
+		DJData(
+				scene_file=r"radio_00_news",
+				station_name="Stanley",
+				audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
+				)
+		]
 
 advert_scenes = {
 		PureWindowsPath(s).stem: s
@@ -74,6 +108,16 @@ advert_scenes = {
 				]
 		}
 
+dj_scenes = {
+		PureWindowsPath(s).stem: s
+		for s in [
+				r"base\media\radio\scenes\radio_00_news.scene",
+				r"base\media\radio\scenes\radio_01_conspiracy.scene",
+				# r"base\media\radio\scenes\radio_02_police.scene",
+				r"base\media\radio\scenes\radio_growl.scene",
+				]
+		}
+
 
 class Extractor:
 	"""
@@ -87,14 +131,18 @@ class Extractor:
 	output_directory: PathPlus
 	audio_output_directory: PathPlus
 	advert_audio_directory: PathPlus
+	dj_audio_directory: PathPlus
+	dj_data_directory: PathPlus
 
 	gamedata_archive_file: PathPlus
 	soundbanks_archive_file: PathPlus
 	lang_en_voice_archive_file: PathPlus
+	audio_general_archive_file: PathPlus
 
 	gamedata_archive: REDArchive
 	soundbanks_archive: REDArchive
 	lang_en_voice_archive: REDArchive
+	audio_general_archive: REDArchive
 
 	def __init__(self, install_directory: PathLike, output_directory: PathLike = "data"):
 		self.install_directory = PathPlus(install_directory)
@@ -111,9 +159,13 @@ class Extractor:
 		self.lang_en_voice_archive_file = self.install_directory / "archive/pc/content" / "lang_en_voice.archive"
 		assert self.lang_en_voice_archive_file.is_file()
 
+		self.audio_general_archive_file = self.install_directory / "archive/pc/content" / "audio_1_general.archive"
+		assert self.audio_general_archive_file.is_file()
+
 		self.gamedata_archive = REDArchive.load_archive(self.gamedata_archive_file)
 		self.soundbanks_archive = REDArchive.load_archive(self.soundbanks_archive_file)
 		self.lang_en_voice_archive = REDArchive.load_archive(self.lang_en_voice_archive_file)
+		self.audio_general_archive = REDArchive.load_archive(self.audio_general_archive_file)
 
 	def prepare_directories(self) -> None:
 		"""
@@ -130,6 +182,12 @@ class Extractor:
 		self.advert_audio_directory = self.audio_output_directory / "adverts"
 		self.advert_audio_directory.maybe_make()
 
+		self.dj_audio_directory = self.audio_output_directory / "dj"
+		self.dj_audio_directory.maybe_make()
+
+		self.dj_data_directory = self.output_directory / "dj"
+		self.dj_data_directory.maybe_make()
+
 	def concatenate_advert_audio_clips(
 			self, events: list[EventData], ad_data: AdvertData, output_file: PathPlus
 			) -> None:
@@ -143,26 +201,50 @@ class Extractor:
 
 		audio_filename_prefix = ad_data.audio_filename_prefix + '_'
 
-		with self.lang_en_voice_archive_file.open("rb") as lang_en_voice_fp, TemporaryPathPlus() as tmpdir:
-			audio_filenames = []
+		# TODO: add attribute to advert class
+		if hasattr(ad_data, "general_audio") and ad_data.general_audio:
+			archive_file = self.audio_general_archive_file
+			archive = self.audio_general_archive
+			directory = r"base\localization\common\vo"
+		else:
+			archive_file = self.lang_en_voice_archive_file
+			archive = self.lang_en_voice_archive
+			directory = r"base\localization\en-us\vo"
+
+		with archive_file.open("rb") as fp, TemporaryPathPlus() as tmpdir:
+			audio_filenames: list[PathPlus] = []
 			for event in events:
-				event_filename = fr"base\localization\en-us\vo\{audio_filename_prefix}{event.audio_file_suffix.lower()}.wem"
+				event_filename = fr"{directory}\{audio_filename_prefix}{event.audio_file_suffix.lower()}.wem"
 
 				if ad_data.scene_file == "ab_ad_nicola":
 					if event.audio_file_suffix.lower() == "f_1b8d42f0a04ea000":
 						event_filename = event_filename.replace("female", "male")
 
 				mp3_filename = tmpdir / f"{event.audio_file_suffix}.mp3"
-				wem_filename = tmpdir / f"{event.audio_file_suffix}.wem"
-				file = self.lang_en_voice_archive.file_list.find_filename(event_filename)
-				contents = self.lang_en_voice_archive.extract_file(lang_en_voice_fp, file)
-				wem_filename.write_bytes(contents)
-				transcode_file(wem_filename, mp3_filename)
+				self.extract_audio(archive, fp, event_filename, mp3_filename)
 				audio_filenames.append(mp3_filename)
 
-			clips = [AudioFileClip(c) for c in audio_filenames]
-			final_clip: CompositeAudioClip = concatenate_audioclips(clips)
-			final_clip.write_audiofile(output_file)
+			if len(audio_filenames) > 1:
+				clips = [AudioFileClip(c) for c in audio_filenames]
+				final_clip: CompositeAudioClip = concatenate_audioclips(clips)
+				final_clip.write_audiofile(output_file)
+			else:
+				audio_filenames[0].rename(output_file)
+
+	def extract_audio(self, archive: REDArchive, fp: IO, filename: str, mp3_filename: PathPlus) -> None:
+		"""
+		Extract audio file from the archive, as MP3.
+		
+		:param archive:
+		:param fp: Open file handle to the archive.
+		:param filename: The file in the archive.
+		:param mp3_filename: Output filename.
+		"""
+		wem_filename = mp3_filename.with_suffix(".wem")
+		file = archive.file_list.find_filename(filename)
+		contents = archive.extract_file(fp, file)
+		wem_filename.write_bytes(contents)
+		transcode_file(wem_filename, mp3_filename)
 
 	def extract_advert_audio(self) -> tuple[Graph, dict[int, list[EventData]]]:
 		"""
@@ -188,4 +270,43 @@ class Extractor:
 
 		return graph, audio_events
 
+	def extract_dj_audio(self) -> tuple[Graph, dict[int, list[EventData]]]:
+		"""
+		Extract audio for radio DJs.
+		"""
+
+		with self.gamedata_archive_file.open("rb") as gamedata_fp:
+
+			for dj_data in djs:
+				print(dj_data)
+
+				file = self.gamedata_archive.file_list.find_filename(dj_scenes[dj_data.scene_file])
+				crw2_file = parse_cr2w_buffer(BytesIO(self.gamedata_archive.extract_file(gamedata_fp, file)))
+
+				# TODO: subtitles = parse_subtitles(scene_json)
+
+				graph, audio_events = parse_radio_scene_graph(crw2_file)
+
+				output_dir = self.dj_audio_directory / dj_data.station_name
+				output_dir.maybe_make()
+
+				for node_id, events in audio_events.items():
+					output_file = output_dir / f"{node_id}_{len(events)}.mp3"
+					if not output_file.is_file():
+						self.concatenate_advert_audio_clips(events, dj_data, output_file)
+
+				lone_nodes, start_nodes, end_nodes = find_graph_entry_points(graph)
+				combinations = list(get_link_paths(graph))
+				output_data = {
+						"link_paths": combinations,
+						"start_nodes": start_nodes,
+						"lone_nodes": lone_nodes,
+						"end_nodes": end_nodes,
+						"audio_events": audio_events,  # TODO: "subtitles": subtitles,
+						}
+				self.dj_data_directory.joinpath(dj_data.audio_filename_prefix + "_data.json").dump_json(
+						output_data, indent=2
+						)
+
+		return graph, audio_events
 
