@@ -34,8 +34,13 @@ from typing import IO
 from cp2077_extractor.audio_data import SceneAudioData
 from cp2077_extractor.audio_data.adverts import adverts
 from cp2077_extractor.cr2w.io import parse_cr2w_buffer
-from cp2077_extractor.radio_dj import parse_radio_scene_graph  # parse_subtitles
-from cp2077_extractor.radio_dj import EventData, find_graph_entry_points, get_link_paths
+from cp2077_extractor.radio_dj import (
+		EventData,
+		find_graph_entry_points,
+		get_link_paths,
+		parse_radio_scene_graph,
+		parse_subtitles
+		)
 from cp2077_extractor.redarchive_reader import REDArchive
 from cp2077_extractor.utils import transcode_file
 from cyberpunk_radio_extractor import extract_radio_songs
@@ -241,7 +246,7 @@ class Extractor(Directories):
 				file = self.gamedata_archive.file_list.find_filename(dj_scenes[dj_data.scene_file])
 				crw2_file = parse_cr2w_buffer(BytesIO(self.gamedata_archive.extract_file(gamedata_fp, file)))
 
-				# TODO: subtitles = parse_subtitles(scene_json)
+				subtitles = parse_subtitles(crw2_file)
 
 				graph, audio_events = parse_radio_scene_graph(crw2_file)
 
@@ -260,7 +265,8 @@ class Extractor(Directories):
 						"start_nodes": start_nodes,
 						"lone_nodes": lone_nodes,
 						"end_nodes": end_nodes,
-						"audio_events": audio_events,  # TODO: "subtitles": subtitles,
+						"audio_events": audio_events,
+						"subtitles": subtitles,
 						}
 				self.dj_data_directory.joinpath(dj_data.audio_filename_prefix + "_data.json").dump_json(
 						output_data, indent=2
