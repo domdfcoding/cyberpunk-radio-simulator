@@ -34,24 +34,27 @@ from cp2077_extractor.radio_dj import DJData
 
 __all__ = ["djs", "advert_scenes", "dj_scenes"]
 
-djs = [
-		DJData(
-				scene_file=r"radio_growl",
-				station_name="89.7 Growl FM",
-				audio_filename_prefix="ash_radio_growl",
-				),
-		DJData(
-				scene_file=r"radio_01_conspiracy",
-				station_name="107.3 Morro Rock Radio",
-				audio_filename_prefix="radio_max_mike_radio_ad_00_test",
-				general_audio=True
-				),
-		DJData(
-				scene_file=r"radio_00_news",
-				station_name="Stanley",
-				audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
-				)
-		]
+djs = {
+		"Ash":
+				DJData(
+						scene_file=r"radio_growl",
+						station_name="89.7 Growl FM",
+						audio_filename_prefix="ash_radio_growl",
+						),
+		"Max Mike":
+				DJData(
+						scene_file=r"radio_01_conspiracy",
+						station_name="107.3 Morro Rock Radio",
+						audio_filename_prefix="radio_max_mike_radio_ad_00_test",
+						general_audio=True
+						),
+		"Stanley":
+				DJData(
+						scene_file=r"radio_00_news",
+						station_name="Stanley",
+						audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
+						)
+		}
 
 advert_scenes = {
 		PureWindowsPath(s).stem: s

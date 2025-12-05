@@ -3,3 +3,4 @@ cyberpunk-radio-extractor@ git+https://github.com/domdfcoding/cyberpunk-radio-ex
 domdf-python-tools>=3.10.0
 moviepy>=2.2.1
 networkx>=3.4.2
+playsound3>=3.3.0

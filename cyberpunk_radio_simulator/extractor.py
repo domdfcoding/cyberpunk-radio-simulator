@@ -52,15 +52,7 @@ from cyberpunk_radio_simulator.data import advert_scenes, dj_scenes, djs
 __all__ = ["Extractor"]
 
 
-class Extractor:
-	"""
-	Extract game data.
-
-	:param install_directory: Path to the Cyberpunk 2077 installation.
-	:param output_directory: Directory to write files to.
-	"""
-
-	install_directory: PathPlus
+class Directories:
 	output_directory: PathPlus
 	audio_output_directory: PathPlus
 	advert_audio_directory: PathPlus
@@ -69,6 +61,48 @@ class Extractor:
 	dj_data_directory: PathPlus
 	artwork_directory: PathPlus
 	station_logos_directory: PathPlus
+
+	def __init__(self, output_directory: PathLike = "data"):
+		self.output_directory = PathPlus(output_directory)
+
+		self.prepare_directories()
+
+	def prepare_directories(self, create_missing: bool = False) -> None:
+		"""
+		Create output directories.
+		"""
+
+		self.audio_output_directory = self.output_directory / "audio"
+		self.dj_data_directory = self.output_directory / "dj"
+		self.artwork_directory = self.output_directory / "artwork"
+
+		self.advert_audio_directory = self.audio_output_directory / "adverts"
+		self.dj_audio_directory = self.audio_output_directory / "dj"
+		self.stations_audio_directory = self.audio_output_directory / "stations"
+
+		self.station_logos_directory = self.artwork_directory / "stations"
+
+		if create_missing:
+			self.output_directory.maybe_make()
+			if not self.output_directory.joinpath(".gitignore").is_file():
+				self.output_directory.joinpath(".gitignore").write_clean('*')
+
+			self.advert_audio_directory.maybe_make(parents=True)
+			self.dj_audio_directory.maybe_make(parents=True)
+			self.stations_audio_directory.maybe_make(parents=True)
+			self.dj_data_directory.maybe_make(parents=True)
+			self.station_logos_directory.maybe_make(parents=True)
+
+
+class Extractor(Directories):
+	"""
+	Extract game data.
+
+	:param install_directory: Path to the Cyberpunk 2077 installation.
+	:param output_directory: Directory to write files to.
+	"""
+
+	install_directory: PathPlus
 
 	gamedata_archive_file: PathPlus
 	soundbanks_archive_file: PathPlus
@@ -81,10 +115,9 @@ class Extractor:
 	audio_general_archive: REDArchive
 
 	def __init__(self, install_directory: PathLike, output_directory: PathLike = "data"):
-		self.install_directory = PathPlus(install_directory)
-		self.output_directory = PathPlus(output_directory)
+		super().__init__(output_directory)
 
-		self.prepare_directories()
+		self.install_directory = PathPlus(install_directory)
 
 		self.gamedata_archive_file = self.install_directory / "archive/pc/content" / "basegame_4_gamedata.archive"
 		assert self.gamedata_archive_file.is_file()
@@ -224,7 +257,7 @@ class Extractor:
 
 		with self.gamedata_archive_file.open("rb") as gamedata_fp:
 
-			for dj_data in djs:
+			for dj_data in djs.values():
 				print(dj_data)
 
 				file = self.gamedata_archive.file_list.find_filename(dj_scenes[dj_data.scene_file])
