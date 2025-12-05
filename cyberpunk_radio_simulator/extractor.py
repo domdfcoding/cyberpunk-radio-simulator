@@ -142,34 +142,6 @@ class Extractor(Directories):
 		self.lang_en_voice_archive = REDArchive.load_archive(self.lang_en_voice_archive_file)
 		self.audio_general_archive = REDArchive.load_archive(self.audio_general_archive_file)
 
-	def prepare_directories(self) -> None:
-		"""
-		Create output directories.
-		"""
-
-		self.output_directory.maybe_make()
-		if not self.output_directory.joinpath(".gitignore").is_file():
-			self.output_directory.joinpath(".gitignore").write_clean('*')
-
-		self.audio_output_directory = self.output_directory / "audio"
-
-		self.advert_audio_directory = self.audio_output_directory / "adverts"
-		self.advert_audio_directory.maybe_make(parents=True)
-
-		self.dj_audio_directory = self.audio_output_directory / "dj"
-		self.dj_audio_directory.maybe_make(parents=True)
-
-		self.stations_audio_directory = self.audio_output_directory / "stations"
-		self.stations_audio_directory.maybe_make(parents=True)
-
-		self.dj_data_directory = self.output_directory / "dj"
-		self.dj_data_directory.maybe_make(parents=True)
-
-		self.artwork_directory = self.output_directory / "artwork"
-
-		self.station_logos_directory = self.artwork_directory / "stations"
-		self.station_logos_directory.maybe_make(parents=True)
-
 	def concatenate_advert_audio_clips(
 			self,
 			events: list[EventData],

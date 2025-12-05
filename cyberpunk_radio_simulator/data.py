@@ -37,6 +37,10 @@ __all__ = ["djs", "advert_scenes", "dj_scenes", "StationData", "stations"]
 
 
 class StationData(NamedTuple):
+	"""
+	Data about a radio station.
+	"""
+
 	#: The name of the radio station
 	name: str
 
@@ -44,27 +48,24 @@ class StationData(NamedTuple):
 	dj: DJData | None = None
 
 
-djs = {
-		"Ash":
-				DJData(
-						scene_file=r"radio_growl",
-						station_name="89.7 Growl FM",
-						audio_filename_prefix="ash_radio_growl",
-						),
-		"Max Mike":
-				DJData(
-						scene_file=r"radio_01_conspiracy",
-						station_name="107.3 Morro Rock Radio",
-						audio_filename_prefix="radio_max_mike_radio_ad_00_test",
-						general_audio=True
-						),
-		"Stanley":
-				DJData(
-						scene_file=r"radio_00_news",
-						station_name="Stanley",
-						audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
-						)
-		}
+# Has to be this way otherwise the linters and formats fight eachother.
+djs = {}
+djs["Ash"] = DJData(
+		scene_file=r"radio_growl",
+		station_name="89.7 Growl FM",
+		audio_filename_prefix="ash_radio_growl",
+		)
+djs["Max Mike"] = DJData(
+		scene_file=r"radio_01_conspiracy",
+		station_name="107.3 Morro Rock Radio",
+		audio_filename_prefix="radio_max_mike_radio_ad_00_test",
+		general_audio=True
+		)
+djs["Stanley"] = DJData(
+		scene_file=r"radio_00_news",
+		station_name="Stanley",
+		audio_filename_prefix="stanley_media_radio_radio_ad_00_test",
+		)
 
 advert_scenes = {
 		PureWindowsPath(s).stem: s

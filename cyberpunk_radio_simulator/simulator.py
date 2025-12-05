@@ -56,10 +56,10 @@ class Radio(Directories):
 
 	station: StationData
 	track_list: InfiniteList[Track]
-	ad_list: InfiniteList[int]
+	ad_list: InfiniteList[str]
 	link_list: InfiniteList[list[int]]
 	jingle_list: InfiniteList[int]
-	audio_events: dict[int, EventData]
+	audio_events: dict[int, list[EventData]]
 	subtitles: dict[str, str]
 
 	def __init__(self, station: StationData, output_directory: PathLike = "data"):
@@ -85,8 +85,11 @@ class Radio(Directories):
 		self.link_list = InfiniteList(list(link_list))
 		self.jingle_list = InfiniteList(list(jingle_list))
 
-	def play_music(self):
-		# Play 3-5 songs
+	def play_music(self) -> None:
+		"""
+		Play 3-5 songs back to back.
+		"""
+
 		remaining_song_count = random.randint(3, 5)
 		print("Playing", remaining_song_count, "songs")
 		while remaining_song_count:
@@ -96,14 +99,22 @@ class Radio(Directories):
 			print(f"{song.artist} – {song.title}")
 			playsound(filename)
 
-	def play_link(self):
+	def play_link(self) -> None:
+		"""
+		Play a link (the DJ talking).
+		"""
+
 		link = self.link_list.pop()
 		print("Play link", link)
 		for node in link:
 			time.sleep(0.5)
 			self._play_scene_node(node)
 
-	def play_ads(self):
+	def play_ads(self) -> None:
+		"""
+		Play an ad break, consisting of 2 or 3 adverts.
+		"""
+
 		ad_count = random.randint(2, 3)
 		print(f"Ad Break ({ad_count})")
 		for _ in range(ad_count):
@@ -113,7 +124,11 @@ class Radio(Directories):
 			filename = self.advert_audio_directory / f"{advert}.mp3"
 			playsound(filename)
 
-	def play_jingle(self):
+	def play_jingle(self) -> None:
+		"""
+		Play one of the radio station's jingles.
+		"""
+
 		print("Jingle")
 		time.sleep(0.5)
 		node = self.jingle_list.pop()
@@ -123,7 +138,10 @@ class Radio(Directories):
 			filename = self.stations_audio_directory / self.station.name / f"jingle_{node}.mp3"
 			playsound(filename)
 
-	def _play_scene_node(self, node: int):
+	def _play_scene_node(self, node: int) -> None:
+		if not self.station.dj:
+			raise NotImplementedError
+
 		filename = self.dj_audio_directory / self.station.dj.station_name / f"{node}_{len(self.audio_events[node])}.mp3"
 		for event in self.audio_events[node]:
 			print('\n'.join(textwrap.wrap(self.subtitles[event.subtitle_ruid], subsequent_indent="  ")))
