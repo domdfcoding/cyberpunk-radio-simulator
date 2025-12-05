@@ -27,7 +27,17 @@ lines_between_types = 0
 use_parentheses = true
 remove_redundant_aliases = true
 default_section = "THIRDPARTY"
-known_third_party = [ "cp2077_extractor", "cyberpunk_radio_extractor", "domdf_python_tools", "moviepy", "networkx",]
+known_third_party = [
+    "click",
+    "consolekit",
+    "cp2077_extractor",
+    "cyberpunk_radio_extractor",
+    "dom_toml",
+    "domdf_python_tools",
+    "moviepy",
+    "networkx",
+    "playsound3",
+]
 known_first_party = [ "cyberpunk_radio_simulator",]
 
 [config]
