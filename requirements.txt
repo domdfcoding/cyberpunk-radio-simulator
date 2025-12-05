@@ -1,5 +1,8 @@
-cp2077-extractor>=0.2.1
+click>=8.3.1
+consolekit>=1.9.0
+cp2077-extractor>=0.3.0
 cyberpunk-radio-extractor@ git+https://github.com/domdfcoding/cyberpunk-radio-extractor.git
+dom-toml>=2.1.0
 domdf-python-tools>=3.10.0
 moviepy>=2.2.1
 networkx>=3.4.2

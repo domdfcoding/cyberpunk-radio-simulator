@@ -209,15 +209,18 @@ class Extractor(Directories):
 		wem_filename.write_bytes(contents)
 		transcode_file(wem_filename, mp3_filename)
 
-	def extract_advert_audio(self) -> tuple[Graph, dict[int, list[EventData]]]:
+	def extract_advert_audio(self, verbose: bool = False) -> tuple[Graph, dict[int, list[EventData]]]:
 		"""
 		Extract audio for adverts.
+
+		:param verbose:
 		"""
 
 		with self.gamedata_archive_file.open("rb") as gamedata_fp:
 
 			for ad_name, ad_data in adverts.items():
-				print(ad_data, ad_name)
+				if verbose:
+					print(ad_data, ad_name)
 
 				file = self.gamedata_archive.file_list.find_filename(advert_scenes[ad_data.scene_file])
 				crw2_file = parse_cr2w_buffer(BytesIO(self.gamedata_archive.extract_file(gamedata_fp, file)))
@@ -274,9 +277,11 @@ class Extractor(Directories):
 
 		return graph, audio_events
 
-	def extract_radio_tracks(self) -> None:
+	def extract_radio_tracks(self, verbose: bool = False) -> None:
 		"""
 		Extract the tracks that play on the radio stations.
+
+		:param verbose: Show individual tracks being processed.
 		"""
 
 		album_art_data = get_album_art(self.install_directory)
@@ -286,7 +291,7 @@ class Extractor(Directories):
 				self.stations_audio_directory,
 				album_art_data=album_art_data,
 				jingles=True,
-				verbose=True,
+				verbose=verbose,
 				)
 
 	def extract_station_logos(self) -> None:
