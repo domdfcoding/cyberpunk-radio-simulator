@@ -53,6 +53,12 @@ __all__ = ["Extractor"]
 
 
 class Directories:
+	"""
+	Base class with information on the data directory structure.
+
+	:param output_directory: Directory to write files to.
+	"""
+
 	output_directory: PathPlus
 	audio_output_directory: PathPlus
 	advert_audio_directory: PathPlus

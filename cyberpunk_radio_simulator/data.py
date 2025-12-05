@@ -28,11 +28,21 @@ Data for extraction and simulation.
 
 # stdlib
 from pathlib import PureWindowsPath
+from typing import NamedTuple
 
 # 3rd party
 from cp2077_extractor.radio_dj import DJData
 
-__all__ = ["djs", "advert_scenes", "dj_scenes"]
+__all__ = ["djs", "advert_scenes", "dj_scenes", "StationData", "stations"]
+
+
+class StationData(NamedTuple):
+	#: The name of the radio station
+	name: str
+
+	#: The station's DJ, if any.
+	dj: DJData | None = None
+
 
 djs = {
 		"Ash":
@@ -93,6 +103,28 @@ dj_scenes = {
 				r"base\media\radio\scenes\radio_01_conspiracy.scene",
 				# r"base\media\radio\scenes\radio_02_police.scene",
 				r"base\media\radio\scenes\radio_growl.scene",
+				]
+		}
+
+stations: dict[str, StationData] = {
+		sd.name: sd
+		for sd in [
+				StationData("88.9 Pacific Dreams"),
+				StationData("89.3 Radio Vexelstrom"),
+				StationData("89.7 Growl FM", dj=djs["Ash"]),
+				StationData("91.9 Royal Blue Radio"),
+				StationData("92.9 Night FM"),
+				StationData("95.2 Samizdat Radio"),
+				StationData("96.1 Ritual FM"),
+				StationData("98.7 Body Heat Radio"),
+				StationData("99.9 Impulse"),
+				StationData("101.9 The Dirge"),
+				StationData("103.5 Radio PEBKAC"),
+				StationData("106.9 30 Principales"),
+				StationData(
+						"107.3 Morro Rock Radio", dj=djs["Max Mike"]
+						),  # TODO: filter out (and later program separately) the song intros/outros. TODO: played 274 as link on its own out of context
+				StationData("107.5 Dark Star"),
 				]
 		}
 
