@@ -7,4 +7,5 @@ domdf-python-tools>=3.10.0
 moviepy>=2.2.1
 natsort>=8.4.0
 networkx>=3.4.2
+notify-rs>=0.1.0
 playsound3>=3.3.0

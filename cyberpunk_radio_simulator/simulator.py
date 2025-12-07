@@ -38,6 +38,7 @@ from cp2077_extractor.radio_dj import EventData, load_events_dict
 from cp2077_extractor.track import Track
 from cp2077_extractor.utils import InfiniteList
 from domdf_python_tools.typing import PathLike
+from notify_rs import URGENCY_CRITICAL, Notification
 from playsound3 import playsound
 
 # this package
@@ -97,6 +98,10 @@ class Radio(Directories):
 			remaining_song_count -= 1
 			filename = self.stations_audio_directory / self.station.name / f"{song.filename_stub}.mp3"
 			print(f"{song.artist} – {song.title}")
+			# TODO: allow PathLike to be passed directly
+			Notification().summary(self.station.name).body(f"{song.artist} – {song.title}").icon(
+					self.station_logos_directory.abspath().joinpath(f"{self.station.name}.png").as_posix()
+					).urgency(URGENCY_CRITICAL).show()
 			playsound(filename)
 
 	def play_link(self) -> None:
