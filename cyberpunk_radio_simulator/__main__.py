@@ -29,11 +29,14 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 # 3rd party
 import click
 from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
+from consolekit.input import choice
 from consolekit.options import flag_option, version_option
 from consolekit.versions import get_version_callback
+from natsort import natsorted
 
 # this package
 from cyberpunk_radio_simulator import __version__
+from cyberpunk_radio_simulator.data import stations
 
 __all__ = ["extract", "main", "play"]
 
@@ -88,10 +91,19 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 	extractor.extract_radio_tracks(verbose=verbose)
 
 
-@click.option("-s", "--station", "station_name", help="The station to play.")
+station_choices = natsorted(stations.keys())
+
+
+@click.option(
+		"-s",
+		"--station",
+		"station_name",
+		help="The station to play.",
+		type=click.Choice(station_choices, case_sensitive=False)
+		)
 @click.option("-o", "--output-dir", default="data", help="Path to write files to.")
 @main.command()
-def play(station_name: str, output_dir: str = "data") -> None:
+def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	"""
 	Extract relevant files and data from the game.
 	"""
@@ -101,7 +113,6 @@ def play(station_name: str, output_dir: str = "data") -> None:
 	from cp2077_extractor.utils import InfiniteList
 
 	# this package
-	from cyberpunk_radio_simulator.data import stations
 	from cyberpunk_radio_simulator.simulator import Radio
 	config = dom_toml.load("config.toml")
 
@@ -112,10 +123,15 @@ def play(station_name: str, output_dir: str = "data") -> None:
 
 	# TODO: it played a song twice
 
+	if not station_name:
+		station_name = station_choices[choice(station_choices, text="Select a station", start_index=1)]
+
 	station = stations[station_name]
 	# station = stations["98.7 Body Heat Radio"]
 	# station = stations["89.7 Growl FM"]
 	# station = stations["107.5 Dark Star"]
+
+	print("Tuning to", station_name)
 
 	radio = Radio(station=station)
 
