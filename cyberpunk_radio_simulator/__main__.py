@@ -152,18 +152,17 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	else:
 		break_options = InfiniteList([AD_BREAK, JINGLE])
 
+	print("Jingle")
 	radio.play_jingle()
 	while True:
-		# print("Play music")
 		radio.play_music()
 		option = break_options.pop()
 		if option == LINK:
-			print("Link")
 			radio.play_link()
 		elif option == AD_BREAK:
-			# print("Ad break")
-			radio.play_ads()
+			radio.play_ad_break()
 		elif option == JINGLE:
+			print("Jingle")
 			radio.play_jingle()
 		else:
 			print("Link alt")
