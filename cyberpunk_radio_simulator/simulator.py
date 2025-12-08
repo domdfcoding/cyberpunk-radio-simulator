@@ -93,6 +93,13 @@ class Radio(Directories):
 		self.link_list = InfiniteList(list(link_list))
 		self.jingle_list = InfiniteList(list(jingle_list))
 
+	def log(self, msg: str) -> None:
+		"""
+		Log a message; by default prints to the terminal.
+		"""
+
+		print(msg)
+
 	def wait(self) -> None:
 		"""
 		Wait for audio playback to finish.
@@ -111,11 +118,11 @@ class Radio(Directories):
 		"""
 
 		remaining_song_count = random.randint(3, 5)
-		print("Playing", remaining_song_count, "songs")
+		self.log(f"Playing {remaining_song_count} songs")
 		while remaining_song_count:
 			song: Track = self.track_list.pop()
 			remaining_song_count -= 1
-			print(f"{song.artist} – {song.title}")
+			self.log(f"{song.artist} – {song.title}")
 			self.play_track(song, blocking)
 
 			if not blocking:
@@ -144,7 +151,7 @@ class Radio(Directories):
 		"""
 
 		link = self.link_list.pop()
-		print("Play link", link)
+		self.log(f"Play link {link}")
 		for node in link:
 			time.sleep(0.5)
 			self._play_scene_node(node, blocking)
@@ -159,11 +166,11 @@ class Radio(Directories):
 		"""
 
 		ad_count = random.randint(2, 3)
-		print(f"Ad Break ({ad_count})")
+		self.log(f"Ad Break ({ad_count})")
 		for _ in range(ad_count):
 			time.sleep(0.5)
 			advert = self.ad_list.pop()
-			print(" -", advert)
+			self.log(f" - {advert}")
 			self.play_ad(advert, blocking)
 			if not blocking:
 				self.wait()
@@ -203,7 +210,7 @@ class Radio(Directories):
 
 		filename = self.dj_audio_directory / self.station.dj.station_name / f"{node}_{len(self.audio_events[node])}.mp3"
 		for event in self.audio_events[node]:
-			print('\n'.join(textwrap.wrap(self.subtitles[event.subtitle_ruid], subsequent_indent="  ")))
+			self.log('\n'.join(textwrap.wrap(self.subtitles[event.subtitle_ruid], subsequent_indent="  ")))
 		self.play_file(filename, blocking)
 
 	def play_file(self, filename: PathLike, blocking: bool = True) -> None:
@@ -244,11 +251,11 @@ class AsyncRadio(Radio):
 		"""
 
 		remaining_song_count = random.randint(3, 5)
-		print("Playing", remaining_song_count, "songs")
+		self.log(f"Playing {remaining_song_count} songs")
 		while remaining_song_count:
 			song: Track = self.track_list.pop()
 			remaining_song_count -= 1
-			print(f"{song.artist} – {song.title}")
+			self.log(f"{song.artist} – {song.title}")
 			self.play_track(song, blocking)
 
 			if not blocking:
@@ -262,7 +269,7 @@ class AsyncRadio(Radio):
 		"""
 
 		link = self.link_list.pop()
-		print("Play link", link)
+		self.log(f"Play link {link}")
 		for node in link:
 			await asyncio.sleep(0.5)
 			self._play_scene_node(node, blocking)
@@ -277,11 +284,11 @@ class AsyncRadio(Radio):
 		"""
 
 		ad_count = random.randint(2, 3)
-		print(f"Ad Break ({ad_count})")
+		self.log(f"Ad Break ({ad_count})")
 		for _ in range(ad_count):
 			await asyncio.sleep(0.5)
 			advert = self.ad_list.pop()
-			print(" -", advert)
+			self.log(f" - {advert}")
 			self.play_ad(advert, blocking)
 			if not blocking:
 				await self.wait()
