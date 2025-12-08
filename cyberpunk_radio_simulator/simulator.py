@@ -27,6 +27,7 @@ Radio playback logic.
 #
 
 # stdlib
+import asyncio
 import os
 import random
 import textwrap
@@ -47,13 +48,14 @@ from playsound3.playsound3 import Sound
 from cyberpunk_radio_simulator.data import StationData
 from cyberpunk_radio_simulator.extractor import Directories
 
-__all__ = ["Radio"]
+__all__ = ["AsyncRadio", "Radio"]
 
 
 class Radio(Directories):
 	"""
 	Plays audio files for a radio station.
 
+	:param station:
 	:param output_directory: Directory containing files extracted from the game.
 	"""
 
@@ -115,6 +117,9 @@ class Radio(Directories):
 			remaining_song_count -= 1
 			print(f"{song.artist} – {song.title}")
 			self.play_track(song, blocking)
+
+			if not blocking:
+				self.wait()
 
 	def play_track(self, track: Track, blocking: bool = True) -> None:
 		"""
@@ -210,3 +215,85 @@ class Radio(Directories):
 		"""
 
 		self.player = playsound(os.fspath(filename), block=blocking)
+
+
+class AsyncRadio(Radio):
+	"""
+	Plays audio files for a radio station, asynchronously.
+
+	:param station:
+	:param output_directory: Directory containing files extracted from the game.
+	"""
+
+	async def wait(self) -> None:  # type: ignore[override]
+		"""
+		Wait for audio playback to finish.
+		"""
+
+		if self.player is None:
+			return
+		else:
+			while self.player.is_alive():
+				await asyncio.sleep(0.1)
+
+	async def play_music(self, blocking: bool = True) -> None:  # type: ignore[override]
+		"""
+		Play 3-5 songs back to back.
+
+		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		"""
+
+		remaining_song_count = random.randint(3, 5)
+		print("Playing", remaining_song_count, "songs")
+		while remaining_song_count:
+			song: Track = self.track_list.pop()
+			remaining_song_count -= 1
+			print(f"{song.artist} – {song.title}")
+			self.play_track(song, blocking)
+
+			if not blocking:
+				await self.wait()
+
+	async def play_link(self, blocking: bool = True) -> None:  # type: ignore[override]
+		"""
+		Play a link (the DJ talking).
+
+		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		"""
+
+		link = self.link_list.pop()
+		print("Play link", link)
+		for node in link:
+			await asyncio.sleep(0.5)
+			self._play_scene_node(node, blocking)
+			if not blocking:
+				await self.wait()
+
+	async def play_ad_break(self, blocking: bool = True) -> None:  # type: ignore[override]
+		"""
+		Play an ad break, consisting of 2 or 3 adverts.
+
+		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		"""
+
+		ad_count = random.randint(2, 3)
+		print(f"Ad Break ({ad_count})")
+		for _ in range(ad_count):
+			await asyncio.sleep(0.5)
+			advert = self.ad_list.pop()
+			print(" -", advert)
+			self.play_ad(advert, blocking)
+			if not blocking:
+				await self.wait()
+
+	async def play_jingle(self, blocking: bool = True) -> None:  # type: ignore[override]
+		"""
+		Play one of the radio station's jingles.
+
+		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		"""
+
+		await asyncio.sleep(0.5)
+		self._play_jingle_immediate(blocking)
+		if not blocking:
+			await self.wait()
