@@ -176,11 +176,14 @@ def gui(output_dir: str = "data") -> None:
 	Launch the Radioport GUI.
 	"""
 
+	# 3rd party
+	from domdf_python_tools.paths import PathPlus
+
 	# this package
 	from cyberpunk_radio_simulator.gui import RadioportApp
 
 	app = RadioportApp()
-	app.data_dir = output_dir
+	app.data_dir = PathPlus(output_dir)
 	app.run()
 
 
