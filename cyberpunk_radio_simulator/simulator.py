@@ -98,7 +98,7 @@ class Radio(Directories):
 		Log a message; by default prints to the terminal.
 		"""
 
-		print(msg)
+		print('\n'.join(textwrap.wrap(msg, subsequent_indent="  ")))
 
 	def wait(self) -> None:
 		"""
@@ -210,7 +210,7 @@ class Radio(Directories):
 
 		filename = self.dj_audio_directory / self.station.dj.station_name / f"{node}_{len(self.audio_events[node])}.mp3"
 		for event in self.audio_events[node]:
-			self.log('\n'.join(textwrap.wrap(self.subtitles[event.subtitle_ruid], subsequent_indent="  ")))
+			self.log(self.subtitles[event.subtitle_ruid])
 		self.play_file(filename, blocking)
 
 	def play_file(self, filename: PathLike, blocking: bool = True) -> None:
