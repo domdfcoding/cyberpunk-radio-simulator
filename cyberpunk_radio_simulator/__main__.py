@@ -110,10 +110,11 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 
 	# 3rd party
 	import dom_toml
-	from cp2077_extractor.utils import InfiniteList
+	from just_playback import Playback  # type: ignore[import-untyped]
 
 	# this package
-	from cyberpunk_radio_simulator.simulator import Radio
+	from cyberpunk_radio_simulator.simulator import Radio, RadioStation
+
 	config = dom_toml.load("config.toml")
 
 	if "output_dir" in config["config"]:
@@ -126,47 +127,29 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	if not station_name:
 		station_name = station_choices[choice(station_choices, text="Select a station", start_index=1)]
 
-	station = stations[station_name]
-	# station = stations["98.7 Body Heat Radio"]
-	# station = stations["89.7 Growl FM"]
-	# station = stations["107.5 Dark Star"]
+	station_data = stations[station_name]
+	# station_data = stations["98.7 Body Heat Radio"]
+	# station_data = stations["89.7 Growl FM"]
+	# station_data = stations["107.5 Dark Star"]
 
 	print("Tuning to", station_name)
 
-	radio = Radio(station=station)
+	radio = Radio(
+			station=RadioStation(station_data, output_directory=output_dir),
+			player=Playback(),
+			)
 
 	# Start with jingle
 	# Loop:
 	# 	Play 3-5 songs, then either:
 	# 		- A link
-	# 		- 1-3 ads [and a jingle]<- TODO
+	# 		- 1-3 ads and a jingle
 	# 		- a jingle
 	# Repeat
 
-	print("Station has DJ?", station.dj is not None)
-	LINK = 1
-	AD_BREAK = 2
-	JINGLE = 3
-	if station.dj:
-		break_options: InfiniteList[int] = InfiniteList([LINK, 0, AD_BREAK, JINGLE])
-	else:
-		break_options = InfiniteList([AD_BREAK, JINGLE])
+	print("Station has DJ?", radio.station.has_dj)
 
-	print("Jingle")
-	radio.play_jingle()
-	while True:
-		radio.play_music()
-		option = break_options.pop()
-		if option == LINK:
-			radio.play_link()
-		elif option == AD_BREAK:
-			radio.play_ad_break()
-		elif option == JINGLE:
-			print("Jingle")
-			radio.play_jingle()
-		else:
-			print("Link alt")
-			radio.play_link()
+	radio.play()
 
 
 @click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")

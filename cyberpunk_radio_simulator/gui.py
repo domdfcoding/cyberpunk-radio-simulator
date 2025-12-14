@@ -30,8 +30,8 @@ Textual terminal GUI for playback.
 from datetime import datetime
 
 # 3rd party
-from cp2077_extractor.utils import InfiniteList
 from domdf_python_tools.paths import PathPlus
+from just_playback import Playback  # type: ignore[import-untyped]
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -40,8 +40,8 @@ from textual.screen import Screen
 from textual.widgets import Digits, Footer, Header, Label, Log
 
 # this package
-from cyberpunk_radio_simulator.data import stations
-from cyberpunk_radio_simulator.simulator import AsyncRadio
+from cyberpunk_radio_simulator.data import StationData, stations
+from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 
 __all__ = ["Clock", "Column", "MainScreen", "RadioportApp", "TextualRadio"]
 
@@ -111,6 +111,9 @@ class RadioportApp(App):
 	"""
 
 	data_dir: PathPlus
+	station_data: StationData
+	station: RadioStation
+	radio: TextualRadio
 
 	CSS = """
 	Screen { align: center middle; }
@@ -170,29 +173,9 @@ class RadioportApp(App):
 	async def play_music(self) -> None:  # noqa: D102
 		self.radio.log_widget = self._main_screen.query_one("#log", Log)
 
-		LINK = 1
-		AD_BREAK = 2
-		JINGLE = 3
-		if self.station.dj:
-			break_options: InfiniteList[int] = InfiniteList([LINK, 0, AD_BREAK, JINGLE])
-		else:
-			break_options = InfiniteList([AD_BREAK, JINGLE])
-
-		self.radio.log_widget.write_line("Jingle")
-		await self.radio.play_jingle(blocking=False)
-		while True:
-			await self.radio.play_music(blocking=False)
-			option = break_options.pop()
-			if option == LINK:
-				await self.radio.play_link(blocking=False)
-			elif option == AD_BREAK:
-				await self.radio.play_ad_break(blocking=False)
-			elif option == JINGLE:
-				self.radio.log_widget.write_line("Jingle")
-				await self.radio.play_jingle(blocking=False)
-			else:
-				self.radio.log_widget.write_line("Link alt")
-				await self.radio.play_link(blocking=False)
+		for event in self.station.get_events(force_jingle=True):
+			# TODO: handle station changing
+			await self.radio.play_event_async(event)
 
 	def setup_clock(self) -> None:
 		"""
@@ -209,6 +192,7 @@ class RadioportApp(App):
 
 		self.setup_radio()
 		log_widget = self._main_screen.query_one("#log", Log)
+		log_widget.write_line("Station has DJ?", self.station.has_dj)
 		log_widget.write_line("Ready")
 		self.play_music()
 
@@ -217,12 +201,13 @@ class RadioportApp(App):
 		Setup the :class:`~.Radio` class.
 		"""
 
-		# self.station = stations["89.7 Growl FM"]
-		self.station = stations["107.5 Dark Star"]
-		self.radio = TextualRadio(station=self.station, output_directory=self.data_dir)
-		print("Station has DJ?", self.station.dj is not None)
+		# self.station_data = stations["89.7 Growl FM"]
+		self.station_data = stations["107.5 Dark Star"]
 
-		self._main_screen.query_one("#station-name", Label).content = self.station.name
+		self.station = RadioStation(self.station_data, output_directory=self.data_dir)
+		self.radio = TextualRadio(station=self.station, player=Playback())
+
+		self._main_screen.query_one("#station-name", Label).content = self.station_data.name
 
 
 if __name__ == "__main__":

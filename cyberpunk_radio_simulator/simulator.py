@@ -32,28 +32,29 @@ import os
 import random
 import textwrap
 import time
+from collections.abc import Callable, Coroutine, Iterator
 
 # 3rd party
 from cp2077_extractor.audio_data.adverts import adverts
 from cp2077_extractor.audio_data.radio_stations import radio_jingle_ids, radio_stations
 from cp2077_extractor.radio_dj import EventData, load_events_dict
 from cp2077_extractor.track import Track
-from cp2077_extractor.utils import InfiniteList
+from cp2077_extractor.utils import InfiniteList, to_snake_case
 from domdf_python_tools.typing import PathLike
+from just_playback import Playback  # type: ignore[import-untyped]
 from notify_rs import URGENCY_CRITICAL, Notification
-from playsound3 import playsound
-from playsound3.playsound3 import Sound
 
 # this package
 from cyberpunk_radio_simulator.data import StationData
+from cyberpunk_radio_simulator.events import AdBreak, Event, Jingle, Link, Tune
 from cyberpunk_radio_simulator.extractor import Directories
 
-__all__ = ["AsyncRadio", "Radio"]
+__all__ = ["AsyncRadio", "Radio", "RadioStation"]
 
 
-class Radio(Directories):
+class RadioStation(Directories):
 	"""
-	Plays audio files for a radio station.
+	Emits events to simulate playing a radio station.
 
 	:param station:
 	:param output_directory: Directory containing files extracted from the game.
@@ -67,12 +68,12 @@ class Radio(Directories):
 	audio_events: dict[int, list[EventData]]
 	subtitles: dict[str, str]
 
-	#: Reference to object playing the audio.
-	player: Sound | None
+	_last_non_tune_action: type[Event] | None
 
 	def __init__(self, station: StationData, output_directory: PathLike = "data"):
 		super().__init__(output_directory)
 		self.station = station
+		self._last_non_tune_action = None
 
 		self.track_list = InfiniteList(list(radio_stations[self.station.name]))
 		self.ad_list = InfiniteList(list(adverts.keys()))
@@ -93,6 +94,173 @@ class Radio(Directories):
 		self.link_list = InfiniteList(list(link_list))
 		self.jingle_list = InfiniteList(list(jingle_list))
 
+	@property
+	def has_dj(self) -> bool:
+		"""
+		Does the station have a DJ?
+		"""  # noqa: D400
+
+		return bool(self.station.dj)
+
+	def get_tunes(self) -> Iterator[Tune]:
+		"""
+		Play 3-5 songs back to back.
+		"""
+
+		remaining_song_count = random.randint(3, 5)
+		while remaining_song_count:
+			song: Track = self.track_list.pop()
+			remaining_song_count -= 1
+			filename = self.stations_audio_directory / self.station.name / f"{song.filename_stub}.mp3"
+			yield Tune(
+					audio_files=[filename],
+					subtitles=[f"{song.artist} – {song.title}"],
+					artist=song.artist,
+					title=song.title,
+					)
+
+	def get_link(self) -> Iterator[Link]:
+		"""
+		Play a link (the DJ talking).
+		"""
+
+		if not self.station.dj:
+			raise NotImplementedError
+
+		link = self.link_list.pop()
+		yield from self._links_for_nodes(link)
+
+	def _links_for_nodes(self, node_ids: list[int]) -> Iterator[Link]:
+		assert self.station.dj is not None
+
+		dj_audio_dir = self.dj_audio_directory / self.station.dj.station_name
+		for node in node_ids:
+			audio_files = dj_audio_dir / f"{node}_{len(self.audio_events[node])}.mp3"
+			subtitles = '\n'.join(self.subtitles[event.subtitle_ruid] for event in self.audio_events[node])
+			yield Link(
+					audio_files=[audio_files],
+					subtitles=[subtitles],
+					start_delay=0.5,
+					inner_delay=0.5,
+					node_id=node,
+					)
+
+	def get_ad_break(self) -> Iterator[AdBreak]:
+		"""
+		Play an ad break, consisting of 2 or 3 adverts.
+		"""
+
+		ad_count = random.randint(2, 3)
+
+		audio_files = []
+		ad_names = []
+
+		for _ in range(ad_count):
+			advert = self.ad_list.pop()
+			audio_files.append(self.advert_audio_directory / f"{advert}.mp3")
+			ad_names.append(f" - {advert}")
+
+		yield AdBreak(
+				audio_files=audio_files,
+				subtitles=ad_names,
+				start_delay=0.5,
+				inner_delay=0.5,
+				end_delay=0.5,
+				ad_count=ad_count,
+				)
+
+	def get_jingle(self) -> Iterator[Event]:
+		"""
+		Play one of the radio station's jingles.
+		"""
+
+		node = self.jingle_list.pop()
+		if self.audio_events:
+			if not self.station.dj:
+				raise NotImplementedError
+
+			yield from self._links_for_nodes([node])
+		else:
+			filename = self.stations_audio_directory / self.station.name / f"jingle_{node}.mp3"
+			yield Jingle(audio_files=[filename], start_delay=0.5)
+
+	def get_events(self, force_jingle: bool = False) -> Iterator[Event]:
+		"""
+		Returns an iterator of events (tunes, DJ links, ad breaks etc.) for this radio station.
+
+		:param force_jingle: Start with a jingle. Otherwise the first event may be either a jingle or a tune
+			(starting part way through), to simulating tuning in to the station mid song.
+		"""
+
+		# When starting, play either the station jingle or a song from a random start point, unless force_jingle is True
+		self._last_non_tune_action = Jingle
+
+		# Unless forced, either start with a jingle or part way through the song (50:50)
+		start_with_jingle = force_jingle or random.getrandbits(1)
+		if start_with_jingle:
+			yield from self.get_jingle()
+			yield from self.get_tunes()
+		else:
+			# Pick random start point (as percentage of track)
+			start_points = [
+					0, random.randint(30 - 5, 30 + 5), random.randint(60 - 5, 60 + 6), random.randint(90 - 5, 90)
+					]
+			start_percentage = random.choice(start_points)
+			if start_percentage:
+				# Otherwise we can play as normal
+				music_events = list(self.get_tunes())
+				music_events[0].start_point = start_percentage
+				yield from music_events
+			else:
+				yield from self.get_tunes()
+
+		# Now loop, playing a link/jingle/ad break, and then music
+		while True:
+			if self.has_dj:
+				break_options = [Link, AdBreak, Jingle]
+				weights = [2.0, 1.0, 1.0]
+			else:
+				break_options = [AdBreak, Jingle]
+				weights = [1.0, 1.0]
+
+			# Weight it against the one that last happened
+			weights[break_options.index(self._last_non_tune_action)] = 0.25
+			option = random.choices(break_options, weights=weights, k=1)[0]
+			self._last_non_tune_action = option
+
+			if option is Link:
+				yield from self.get_link()
+			elif option is AdBreak:
+				yield from self.get_ad_break()
+				if not random.getrandbits(2):  # So happens 1/3 of the time
+					yield from self.get_jingle()
+			elif option is Jingle:
+				yield from self.get_jingle()
+			else:
+				raise NotImplementedError(option)
+
+			yield from self.get_tunes()
+
+
+class Radio:
+	"""
+	Plays audio files for a radio station.
+
+	:param station:
+	"""
+
+	station: RadioStation
+
+	#: Reference to object playing the audio.
+	player: Playback
+
+	#: If :py:obj:`True`, skip all remaining actions for this event (stop playback, don't sleep, etc.)
+	skip: bool = False
+
+	def __init__(self, station: RadioStation, player: Playback):
+		self.station = station
+		self.player = player
+
 	def log(self, msg: str) -> None:
 		"""
 		Log a message; by default prints to the terminal.
@@ -105,123 +273,115 @@ class Radio(Directories):
 		Wait for audio playback to finish.
 		"""
 
-		if self.player is None:
-			return
-		else:
-			self.player.wait()
+		while self.player.active:
+			pass
 
-	def play_music(self, blocking: bool = True) -> None:
+	def _send_tune_notification(self, tune: Tune) -> None:
 		"""
-		Play 3-5 songs back to back.
-
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		Send a desktop notification for the tune being played.
 		"""
 
-		remaining_song_count = random.randint(3, 5)
-		self.log(f"Playing {remaining_song_count} songs")
-		while remaining_song_count:
-			song: Track = self.track_list.pop()
-			remaining_song_count -= 1
-			self.log(f"{song.artist} – {song.title}")
-			self.play_track(song, blocking)
+		toast = Notification().summary(self.station.station.name).body(f"{tune.artist} – {tune.title}")
 
-			if not blocking:
-				self.wait()
-
-	def play_track(self, track: Track, blocking: bool = True) -> None:
-		"""
-		Play a single song.
-
-		:param track:
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
-		"""
-
-		filename = self.stations_audio_directory / self.station.name / f"{track.filename_stub}.mp3"
 		# TODO: allow PathLike to be passed directly to notification
-		Notification().summary(self.station.name).body(f"{track.artist} – {track.title}").icon(
-				self.station_logos_directory.abspath().joinpath(f"{self.station.name}.png").as_posix()
-				).urgency(URGENCY_CRITICAL).show()
-		self.play_file(filename, blocking)
+		icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
+		toast.icon(icon_file.as_posix())
 
-	def play_link(self, blocking: bool = True) -> None:
+		toast.urgency(URGENCY_CRITICAL).show()
+
+	def play_tune(self, tune: Tune) -> None:
 		"""
-		Play a link (the DJ talking).
+		Play a :class:`~.Tune` – a single song.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param tune:
 		"""
 
-		link = self.link_list.pop()
-		self.log(f"Play link {link}")
-		for node in link:
-			time.sleep(0.5)
-			self._play_scene_node(node, blocking)
-			if not blocking:
-				self.wait()
+		self._send_tune_notification(tune)
 
-	def play_ad_break(self, blocking: bool = True) -> None:
+		for idx, (filename, subtitles) in enumerate(tune.iter_files()):
+			last_volume = self.player.volume
+
+			if tune.start_point:
+				self.player.set_volume(0)
+
+			self.player.load_file(os.fspath(filename))
+			self.player.play()
+
+			if subtitles is not None:
+				self.log(subtitles)
+
+			if tune.start_point:
+				self.player.seek((self.player.duration / 100) * tune.start_point)
+				self.player.set_volume(last_volume)
+
+			self.wait()
+
+			if not self.skip and idx < len(tune.audio_files) - 1:
+				time.sleep(tune.inner_delay)
+
+	def play_ad_break(self, ad_break: AdBreak) -> None:
 		"""
 		Play an ad break, consisting of 2 or 3 adverts.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param ad_break:
 		"""
 
-		ad_count = random.randint(2, 3)
-		self.log(f"Ad Break ({ad_count})")
-		for _ in range(ad_count):
-			time.sleep(0.5)
-			advert = self.ad_list.pop()
-			self.log(f" - {advert}")
-			self.play_ad(advert, blocking)
-			if not blocking:
-				self.wait()
+		self.log(f"Ad Break ({ad_break.ad_count})")
+		self._play_event(ad_break)
 
-	def play_ad(self, ad_name: str, blocking: bool = True) -> None:
-		"""
-		Play an advert.
-
-		:param ad_name: The name of the advert to play.
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
-		"""
-
-		filename = self.advert_audio_directory / f"{ad_name}.mp3"
-		self.play_file(filename, blocking)
-
-	def play_jingle(self, blocking: bool = True) -> None:
+	def play_jingle(self, jingle: Jingle) -> None:
 		"""
 		Play one of the radio station's jingles.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param jingle:
 		"""
 
-		time.sleep(0.5)
-		self._play_jingle_immediate(blocking)
+		self.log("Play Jingle")
+		self._play_event(jingle)
 
-	def _play_jingle_immediate(self, blocking: bool = True) -> None:
-		node = self.jingle_list.pop()
-		if self.audio_events:
-			self._play_scene_node(node, blocking)
-		else:
-			filename = self.stations_audio_directory / self.station.name / f"jingle_{node}.mp3"
-			self.play_file(filename, blocking)
-
-	def _play_scene_node(self, node: int, blocking: bool = True) -> None:
-		if not self.station.dj:
-			raise NotImplementedError
-
-		filename = self.dj_audio_directory / self.station.dj.station_name / f"{node}_{len(self.audio_events[node])}.mp3"
-		for event in self.audio_events[node]:
-			self.log(self.subtitles[event.subtitle_ruid])
-		self.play_file(filename, blocking)
-
-	def play_file(self, filename: PathLike, blocking: bool = True) -> None:
+	def play_event(self, event: Event) -> None:
 		"""
-		Play the given audio file.
+		Play an event (a jingle, ad break, tune, etc.).
 
-		:param filename:
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param event:
 		"""
 
-		self.player = playsound(os.fspath(filename), block=blocking)
+		self.skip = False
+		event_name = to_snake_case(type(event).__name__)
+		event_fn = getattr(self, f"play_{event_name}", self._play_event)
+
+		time.sleep(event.start_delay)
+		event_fn(event)
+
+		if not self.skip:
+			time.sleep(event.end_delay)
+
+	def _play_event(self, event: Event) -> None:
+		"""
+		Generic handler for playing events, where no specific function for the event type exists.
+
+		:param event:
+		"""
+
+		for idx, (filename, subtitles) in enumerate(event.iter_files()):
+			self.player.load_file(os.fspath(filename))
+			self.player.play()
+
+			if subtitles is not None:
+				self.log(subtitles)
+
+			self.wait()
+
+			if not self.skip and idx < len(event.audio_files) - 1:
+				time.sleep(event.inner_delay)
+
+	def play(self) -> None:
+		"""
+		Play the station.
+		"""
+
+		for event in self.station.get_events(force_jingle=True):
+			self.play_event(event)
 
 
 class AsyncRadio(Radio):
@@ -229,7 +389,6 @@ class AsyncRadio(Radio):
 	Plays audio files for a radio station, asynchronously.
 
 	:param station:
-	:param output_directory: Directory containing files extracted from the game.
 	"""
 
 	async def wait(self) -> None:  # type: ignore[override]
@@ -237,70 +396,99 @@ class AsyncRadio(Radio):
 		Wait for audio playback to finish.
 		"""
 
-		if self.player is None:
-			return
-		else:
-			while self.player.is_alive():
-				await asyncio.sleep(0.1)
+		while self.player.active:
+			await asyncio.sleep(0.1)
 
-	async def play_music(self, blocking: bool = True) -> None:  # type: ignore[override]
+	async def play_tune_async(self, tune: Tune) -> None:
 		"""
-		Play 3-5 songs back to back.
+		Play a :class:`~.Tune` – a single song.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param tune:
 		"""
 
-		remaining_song_count = random.randint(3, 5)
-		self.log(f"Playing {remaining_song_count} songs")
-		while remaining_song_count:
-			song: Track = self.track_list.pop()
-			remaining_song_count -= 1
-			self.log(f"{song.artist} – {song.title}")
-			self.play_track(song, blocking)
+		self._send_tune_notification(tune)
 
-			if not blocking:
-				await self.wait()
+		for idx, (filename, subtitles) in enumerate(tune.iter_files()):
+			last_volume = self.player.volume
 
-	async def play_link(self, blocking: bool = True) -> None:  # type: ignore[override]
-		"""
-		Play a link (the DJ talking).
+			if tune.start_point:
+				self.player.set_volume(0)
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
-		"""
+			self.player.load_file(os.fspath(filename))
+			self.player.play()
 
-		link = self.link_list.pop()
-		self.log(f"Play link {link}")
-		for node in link:
-			await asyncio.sleep(0.5)
-			self._play_scene_node(node, blocking)
-			if not blocking:
-				await self.wait()
+			if subtitles is not None:
+				self.log(subtitles)
 
-	async def play_ad_break(self, blocking: bool = True) -> None:  # type: ignore[override]
+			if tune.start_point:
+				self.player.seek((self.player.duration / 100) * tune.start_point)
+				self.player.set_volume(last_volume)
+
+			await self.wait()
+
+			if not self.skip and idx < len(tune.audio_files) - 1:
+				await asyncio.sleep(tune.inner_delay)
+
+	async def play_ad_break_async(self, ad_break: AdBreak) -> None:
 		"""
 		Play an ad break, consisting of 2 or 3 adverts.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param ad_break:
 		"""
 
-		ad_count = random.randint(2, 3)
-		self.log(f"Ad Break ({ad_count})")
-		for _ in range(ad_count):
-			await asyncio.sleep(0.5)
-			advert = self.ad_list.pop()
-			self.log(f" - {advert}")
-			self.play_ad(advert, blocking)
-			if not blocking:
-				await self.wait()
+		self.log(f"Ad Break ({ad_break.ad_count})")
+		await self._play_event_async(ad_break)
 
-	async def play_jingle(self, blocking: bool = True) -> None:  # type: ignore[override]
+	async def play_jingle_async(self, jingle: Jingle) -> None:
 		"""
 		Play one of the radio station's jingles.
 
-		:param blocking: If :py:obj:`True` music playback blocks execution until finished.
+		:param jingle:
 		"""
 
-		await asyncio.sleep(0.5)
-		self._play_jingle_immediate(blocking)
-		if not blocking:
+		self.log("Play Jingle")
+		await self._play_event_async(jingle)
+
+	async def play_event_async(self, event: Event) -> None:
+		"""
+		Play an event (a jingle, ad break, tune, etc.).
+
+		:param event:
+		"""
+
+		self.skip = False
+		event_name = to_snake_case(type(event).__name__)
+		event_fn: Callable[[Event], Coroutine] = getattr(self, f"play_{event_name}_async", self._play_event_async)
+
+		await asyncio.sleep(event.start_delay)
+		await event_fn(event)
+
+		if not self.skip:
+			await asyncio.sleep(event.end_delay)
+
+	async def _play_event_async(self, event: Event) -> None:
+		"""
+		Generic handler for playing events, where no specific function for the event type exists.
+
+		:param event:
+		"""
+
+		for idx, (filename, subtitles) in enumerate(event.iter_files()):
+			self.player.load_file(os.fspath(filename))
+			self.player.play()
+
+			if subtitles is not None:
+				self.log(subtitles)
+
 			await self.wait()
+
+			if not self.skip and idx < len(event.audio_files) - 1:
+				await asyncio.sleep(event.inner_delay)
+
+	async def play_async(self) -> None:
+		"""
+		Play the station.
+		"""
+
+		for event in self.station.get_events(force_jingle=True):
+			await self.play_event_async(event)

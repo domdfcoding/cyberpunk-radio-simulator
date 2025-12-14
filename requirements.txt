@@ -4,10 +4,10 @@ cp2077-extractor>=0.3.0
 cyberpunk-radio-extractor@ git+https://github.com/domdfcoding/cyberpunk-radio-extractor.git
 dom-toml>=2.1.0
 domdf-python-tools>=3.10.0
+just-playback>=0.1.8
 moviepy>=2.2.1
 natsort>=8.4.0
 networkx>=3.4.2
 notify-rs>=0.1.0
 pillow>=11.0.0
-playsound3>=3.3.0
 textual>=6.8.0
