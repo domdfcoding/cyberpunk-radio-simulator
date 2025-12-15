@@ -27,28 +27,26 @@ Textual terminal GUI for playback.
 #
 
 # stdlib
-import datetime
 from dataclasses import dataclass
 
 # 3rd party
 from domdf_python_tools.paths import PathPlus
 from just_playback import Playback  # type: ignore[import-untyped]
-from PIL import Image
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import HorizontalGroup, HorizontalScroll, VerticalGroup, VerticalScroll
-from textual.reactive import reactive
+from textual.containers import HorizontalGroup, HorizontalScroll, VerticalGroup
 from textual.screen import Screen
-from textual.widgets import Digits, Footer, Header, Label, Log, ProgressBar
+from textual.widgets import Footer, Header, Label, Log
 
 # this package
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Tune
-from cyberpunk_radio_simulator.logos import get_logo_tight, logo_to_rich
+from cyberpunk_radio_simulator.logos import get_logo_tight
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
+from cyberpunk_radio_simulator.widgets import Clock, StationLogo, SubtitleLog, TrackInfoLabel, TrackProgress
 
-__all__ = ["Clock", "Column", "MainScreen", "RadioportApp", "TextualRadio"]
+__all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio"]
 
 
 class TextualRadio(AsyncRadio):
@@ -65,118 +63,6 @@ class TextualRadio(AsyncRadio):
 
 	def log(self, msg: str) -> None:  # noqa: D102
 		self.log_widget.write_line(msg)
-
-
-class Column(VerticalScroll):
-	"""
-	A vertically scrollable column with a fixed width.
-	"""
-
-	DEFAULT_CSS = """
-	Column {
-		height: 1fr;
-		width: 32;
-		margin: 0 2;
-	}
-	"""
-
-
-class Clock(Digits):
-	"""
-	Widget to show the current time.
-	"""
-
-	def on_mount(self) -> None:  # noqa: D102
-		self.set_interval(0.1, self.update_clock)
-
-	def update_clock(self) -> None:
-		"""
-		Show the current time on the clock.
-		"""
-
-		clock = datetime.datetime.now().time()
-		self.update(f"{clock:%T}")
-
-
-class SubtitleLog(Log):
-	DEFAULT_CSS = """
-	SubtitleLog {
-		height: 1fr;
-		width: 1fr;
-		margin: 0 2;
-	}
-	"""
-
-
-def format_time(seconds: float) -> str:
-	seconds = round(seconds)
-	td = datetime.timedelta(seconds=seconds)
-	# td = datetime.timedelta(days=td.days, seconds=td.seconds, microseconds=0)
-	return str(td)
-
-
-class TrackProgressLabel(Label):
-	track_position = reactive(0.0)
-	duration = reactive(0.0)
-
-	def render(self) -> str:
-		pos_td = format_time(seconds=self.track_position)
-		dur_td = format_time(seconds=self.duration)
-		return f"{pos_td}/{dur_td}"
-
-
-class TrackProgress(ProgressBar):
-	track_position: reactive[float] = reactive(30)
-	duration: reactive[float] = reactive(120)
-
-	def set_track_pos(self, track_position: float, duration: float) -> None:
-		self.track_position = track_position
-		self.duration = duration
-		self.update(total=duration, progress=track_position)
-
-	def compose(self) -> ComposeResult:
-		yield from super().compose()
-		yield TrackProgressLabel().data_bind(
-				track_position=TrackProgress.track_position,
-				duration=TrackProgress.duration,
-				)
-
-
-class TrackInfoLabel(Label):
-	DEFAULT_CSS = """
-	TrackInfoLabel {
-		width: 30vw;
-		max-width: 30vw;
-		background: red 20%;
-	}
-	"""
-
-
-class StationLogo(Label):
-	DEFAULT_CSS = """
-	StationLogo {
-		width: 50;
-		max-width: 50;
-		align-horizontal: center;
-		align-vertical: middle;
-		height: 1fr;
-	}
-	"""
-
-	img: reactive[Image.Image | None] = reactive(None)
-
-	def on_ready(self) -> None:
-		self.data_bind(StationLogo.img)
-
-	def render(self) -> str:
-		if self.img:
-			aspect = self.img.width / self.img.height
-			if aspect < 1:
-				# Taller than wide
-				return logo_to_rich(self.img, 35)
-			else:
-				return logo_to_rich(self.img, 50)
-		return ''
 
 
 class MainScreen(Screen):
@@ -203,6 +89,10 @@ class MainScreen(Screen):
 
 @dataclass
 class MuteState:
+	"""
+	Tracks whether the radio is muted.
+	"""
+
 	muted: bool = False
 	last_volume: float = 1.0
 
