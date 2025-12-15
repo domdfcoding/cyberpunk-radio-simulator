@@ -33,10 +33,10 @@ from typing import cast
 from domdf_python_tools.paths import PathPlus
 from PIL import Image
 
-__all__ = ["get_logo_tight", "log_to_rich"]
+__all__ = ["get_logo_tight", "logo_to_rich"]
 
 
-def log_to_rich(img: Image.Image, dest_width: int) -> str:
+def logo_to_rich(img: Image.Image, dest_width: int) -> str:
 	"""
 	Convert a logo, as a PIL image, for displaying with rich/Textual in a terminal.
 	"""

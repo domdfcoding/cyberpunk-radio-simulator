@@ -147,7 +147,7 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	# 		- a jingle
 	# Repeat
 
-	print("Station has DJ?", radio.station.has_dj)
+	print(f"Station has DJ? {radio.station.has_dj}")
 
 	radio.play()
 

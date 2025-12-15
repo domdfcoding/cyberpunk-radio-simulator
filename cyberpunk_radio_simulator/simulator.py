@@ -417,8 +417,8 @@ class AsyncRadio(Radio):
 			self.player.load_file(os.fspath(filename))
 			self.player.play()
 
-			if subtitles is not None:
-				self.log(subtitles)
+			# if subtitles is not None:
+			# 	self.log(subtitles)
 
 			if tune.start_point:
 				self.player.seek((self.player.duration / 100) * tune.start_point)
