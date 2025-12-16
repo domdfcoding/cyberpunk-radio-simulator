@@ -45,6 +45,7 @@ __all__ = [
 		"Column",
 		"StationLogo",
 		"SubtitleLog",
+		"ThirdColumn",
 		"TrackInfoLabel",
 		"TrackProgress",
 		"TrackProgressLabel",
@@ -114,6 +115,13 @@ class TrackProgressLabel(Label):
 	Widget for displaying the current track position time, and the total track length.
 	"""
 
+	DEFAULT_CSS = """
+	TrackProgressLabel {
+		width: 1fr;
+		text-align: center;
+	}
+	"""
+
 	track_position: reactive[float] = reactive(0.0)
 	duration: reactive[float] = reactive(0.0)
 	paused: reactive[bool] = reactive(False)
@@ -136,8 +144,9 @@ class TrackProgressLabel(Label):
 	def render(self) -> str:  # noqa: D102
 		pos_td = self.format_time(seconds=self.track_position)
 		dur_td = self.format_time(seconds=self.duration)
-		elements = [f"{pos_td} / {dur_td}"]
-		if self.paused:
+		elements = []
+
+		if self.paused:  # 5 characters long
 			elements.append("  ⏸  ")
 		else:
 			self.audio_bar_idx += 1
@@ -152,10 +161,15 @@ class TrackProgressLabel(Label):
 							audio_bars[self.audio_bar_idx],
 							])
 					)
-		if self.muted:
+
+		elements.append(f"{pos_td} / {dur_td}")
+
+		if self.muted:  # 2 characters long (emoji takes 2)
 			elements.append('🔇')
 		else:
 			elements.append("  ")
+
+		elements.append("  ")  # 2 char padding, plus the join space evens it out
 
 		return ' '.join(elements)
 
@@ -167,9 +181,12 @@ class TrackProgress(ProgressBar):
 
 	DEFAULT_CSS = """
 	TrackProgress {
-		width: auto;
 		height: 2;
 		layout: horizontal;
+	}
+
+	TrackProgress Bar {
+		width: 1fr;
 	}
 	"""
 	# TODO: add spinner while playing and pause icon when paused (and mute icon when muted)
@@ -209,8 +226,8 @@ class TrackInfoLabel(Label):
 
 	DEFAULT_CSS = """
 	TrackInfoLabel {
-		width: 40vw;
-		max-width: 40vw;
+		max-width: 1fr;
+		padding-left: 1;
 	}
 	"""
 
@@ -246,3 +263,18 @@ class StationLogo(Label):
 			else:
 				return logo_to_rich(self.img, 45)
 		return ''
+
+
+class ThirdColumn(VerticalGroup):
+	"""
+	A column that takes up a third of the screen.
+	"""
+
+	DEFAULT_CSS = """
+    ThirdColumn {
+        width: 33vw;
+        height: auto;
+        layout: vertical;
+        overflow: hidden hidden;
+    }
+    """

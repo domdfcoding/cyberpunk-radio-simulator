@@ -36,7 +36,7 @@ from just_playback import Playback  # type: ignore[import-untyped]
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import HorizontalGroup, HorizontalScroll, VerticalGroup
+from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right, VerticalGroup
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Label, OptionList
 from textual.widgets.option_list import Option
@@ -46,7 +46,14 @@ from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
-from cyberpunk_radio_simulator.widgets import Clock, StationLogo, SubtitleLog, TrackInfoLabel, TrackProgress
+from cyberpunk_radio_simulator.widgets import (
+		Clock,
+		StationLogo,
+		SubtitleLog,
+		ThirdColumn,
+		TrackInfoLabel,
+		TrackProgress
+		)
 
 __all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio"]
 
@@ -79,12 +86,15 @@ class MainScreen(Screen):
 		yield Footer()
 
 		with HorizontalGroup():
-			with VerticalGroup():
+			with ThirdColumn():
 				yield TrackInfoLabel("Station Name", id="station-name")
 				yield TrackInfoLabel("Artist - Track Title", id="track-info")
-			with VerticalGroup():
-				yield TrackProgress(id="track-progress", total=120, show_percentage=False, show_eta=False)
-			yield Clock("12:34:56")
+			with ThirdColumn():
+				with Center():
+					yield TrackProgress(id="track-progress", total=120, show_percentage=False, show_eta=False)
+			with ThirdColumn():
+				with Right():
+					yield Clock("12:34:56")
 
 		with HorizontalScroll():
 			with VerticalGroup():
