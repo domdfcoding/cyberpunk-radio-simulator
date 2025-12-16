@@ -27,6 +27,7 @@ Desktop notification support.
 #
 
 # stdlib
+import sys
 from typing import NamedTuple, TypeVar
 
 # 3rd party
@@ -34,7 +35,10 @@ from notify_rs import URGENCY_CRITICAL, Notification, NotificationHandle
 
 __all__ = ["NotificationMessage", "NotificationSender"]
 
-_N = TypeVar("_N", Notification, NotificationHandle)
+if sys.platform == "win32":
+	_N = TypeVar("_N", Notification)
+else:
+	_N = TypeVar("_N", Notification, NotificationHandle)
 
 
 class NotificationMessage(NamedTuple):
@@ -73,7 +77,10 @@ class NotificationSender:
 
 	# TODO: support for Textual's notifications
 	# TODO: I think macOS returns NotificationHandle but it can't do updates. Need a can_update flag.
-	notification_handle: NotificationHandle | None = None
+	if sys.platform == "win32":
+		notification_handle: None = None
+	else:
+		notification_handle: NotificationHandle | None = None
 
 	@classmethod
 	def send_message(cls, message: NotificationMessage) -> None:
