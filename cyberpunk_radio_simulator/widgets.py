@@ -28,6 +28,7 @@ Textual widgets for terminal GUI.
 
 # stdlib
 import datetime
+import random
 
 # 3rd party
 from PIL import Image
@@ -100,7 +101,12 @@ class SubtitleLog(RichLog):
 		self.write(message)
 
 
-audio_bars = "▁▂▃▄▅▆▇█▇▆▅▄▃"
+if random.getrandbits(1):
+	audio_bars = "▁▂▃▄▅▆▇█▇▆▅▄▃▁"
+	bar_step = 3
+else:
+	audio_bars = "⠁⠂⠄⡀⢀⠠⠐⠈⠁⠂⠄⡀⢀⠠⠐⠈"
+	bar_step = 2
 
 
 class TrackProgressLabel(Label):
@@ -139,10 +145,10 @@ class TrackProgressLabel(Label):
 
 			elements.append(
 					''.join([
-							audio_bars[self.audio_bar_idx - 12],
-							audio_bars[self.audio_bar_idx - 9],
-							audio_bars[self.audio_bar_idx - 6],
-							audio_bars[self.audio_bar_idx - 3],
+							audio_bars[self.audio_bar_idx - (bar_step * 4)],
+							audio_bars[self.audio_bar_idx - (bar_step * 3)],
+							audio_bars[self.audio_bar_idx - (bar_step * 2)],
+							audio_bars[self.audio_bar_idx - bar_step],
 							audio_bars[self.audio_bar_idx],
 							])
 					)
