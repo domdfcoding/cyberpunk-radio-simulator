@@ -195,8 +195,8 @@ class RadioStation(Directories):
 		# When starting, play either the station jingle or a song from a random start point, unless force_jingle is True
 		self._last_non_tune_action = Jingle
 
-		# Unless forced, either start with a jingle or part way through the song (50:50)
-		start_with_jingle = force_jingle or random.getrandbits(1)
+		# Unless forced, either start with a jingle or part way through the song (1:2)
+		start_with_jingle = force_jingle or not random.getrandbits(2)
 		if start_with_jingle:
 			yield from self.get_jingle()
 			yield from self.get_tunes()
