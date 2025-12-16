@@ -47,6 +47,9 @@ class StationData(NamedTuple):
 	#: The station's DJ, if any.
 	dj: DJData | None = None
 
+	#: Whether the station has adverts.
+	has_ads: bool = True
+
 
 # Has to be this way otherwise the linters and formats fight eachother.
 djs = {}
@@ -112,13 +115,13 @@ stations: dict[str, StationData] = {
 		for sd in [
 				StationData("88.9 Pacific Dreams"),
 				StationData("89.3 Radio Vexelstrom"),
-				StationData("89.7 Growl FM", dj=djs["Ash"]),
+				StationData("89.7 Growl FM", dj=djs["Ash"], has_ads=False),
 				StationData("91.9 Royal Blue Radio"),
 				StationData("92.9 Night FM"),
 				StationData("95.2 Samizdat Radio"),
 				StationData("96.1 Ritual FM"),
 				StationData("98.7 Body Heat Radio"),
-				StationData("99.9 Impulse"),
+				# StationData("99.9 Impulse", has_ads=False),
 				StationData("101.9 The Dirge"),
 				StationData("103.5 Radio PEBKAC"),
 				StationData("106.9 30 Principales"),

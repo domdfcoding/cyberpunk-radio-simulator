@@ -216,16 +216,15 @@ class RadioStation(Directories):
 
 		# Now loop, playing a link/jingle/ad break, and then music
 		while True:
+			break_options: dict[type[Event], float] = {Jingle: 1.0}
 			if self.has_dj:
-				break_options = [Link, AdBreak, Jingle]
-				weights = [2.0, 1.0, 1.0]
-			else:
-				break_options = [AdBreak, Jingle]
-				weights = [1.0, 1.0]
+				break_options[Link] = 2.0
+			if self.station.has_ads:
+				break_options[AdBreak] = 1.0
 
 			# Weight it against the one that last happened
-			weights[break_options.index(self._last_non_tune_action)] = 0.25
-			option = random.choices(break_options, weights=weights, k=1)[0]
+			break_options[self._last_non_tune_action] = 0.25
+			option = random.choices(list(break_options), weights=list(break_options.values()), k=1)[0]
 			self._last_non_tune_action = option
 
 			if option is Link:
