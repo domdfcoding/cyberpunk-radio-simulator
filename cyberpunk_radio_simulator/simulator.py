@@ -163,7 +163,7 @@ class RadioStation(Directories):
 		yield AdBreak(
 				audio_files=audio_files,
 				subtitles=ad_names,
-				start_delay=0.5,
+				start_delay=1,
 				inner_delay=0.5,
 				end_delay=0.5,
 				ad_count=ad_count,
