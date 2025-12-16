@@ -38,7 +38,7 @@ from natsort import natsorted
 from cyberpunk_radio_simulator import __version__
 from cyberpunk_radio_simulator.data import stations
 
-__all__ = ["extract", "gui", "main", "play"]
+__all__ = ["extract", "gui", "main", "play", "web"]
 
 
 @version_option(
@@ -168,6 +168,23 @@ def gui(output_dir: str = "data") -> None:
 	app = RadioportApp()
 	app.data_dir = PathPlus(output_dir)
 	app.run()
+
+
+@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@main.command()
+def web(output_dir: str = "data") -> None:
+	"""
+	Launch the Radioport web UI.
+	"""
+
+	# stdlib
+	import sys
+
+	# 3rd party
+	from textual_serve.server import Server
+
+	server = Server(' '.join([sys.executable, __file__, "gui", "-o", output_dir]))
+	server.serve(debug=True)
 
 
 if __name__ == "__main__":
