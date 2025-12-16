@@ -42,12 +42,12 @@ from cp2077_extractor.track import Track
 from cp2077_extractor.utils import InfiniteList, to_snake_case
 from domdf_python_tools.typing import PathLike
 from just_playback import Playback  # type: ignore[import-untyped]
-from notify_rs import URGENCY_CRITICAL, Notification
 
 # this package
 from cyberpunk_radio_simulator.data import StationData
 from cyberpunk_radio_simulator.events import AdBreak, Event, Jingle, Link, Tune
 from cyberpunk_radio_simulator.extractor import Directories
+from cyberpunk_radio_simulator.notifications import NotificationSender
 
 __all__ = ["AsyncRadio", "Radio", "RadioStation"]
 
@@ -281,13 +281,15 @@ class Radio:
 		Send a desktop notification for the tune being played.
 		"""
 
-		toast = Notification().summary(self.station.station.name).body(f"{tune.artist} – {tune.title}")
-
 		# TODO: allow PathLike to be passed directly to notification
 		icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
-		toast.icon(icon_file.as_posix())
 
-		toast.urgency(URGENCY_CRITICAL).show()
+		# TODO: cancel unsend ones when switching station
+		NotificationSender.send(
+				summary=self.station.station.name,
+				body=f"{tune.artist} – {tune.title}",
+				icon_file=icon_file.as_posix()
+				)
 
 	def play_tune(self, tune: Tune) -> None:
 		"""
