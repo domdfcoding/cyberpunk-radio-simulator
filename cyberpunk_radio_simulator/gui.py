@@ -27,6 +27,7 @@ Textual terminal GUI for playback.
 #
 
 # stdlib
+import random
 from dataclasses import dataclass
 from typing import cast
 
@@ -311,8 +312,10 @@ class RadioportApp(App):
 		Setup the :class:`~.Radio` class.
 		"""
 
+		self.station_data = stations[random.choice(station_names)]
+
 		# self.station_data = stations["89.7 Growl FM"]
-		self.station_data = stations["107.5 Dark Star"]
+		# self.station_data = stations["107.5 Dark Star"]
 
 		station = RadioStation(self.station_data, output_directory=self.data_dir)
 		self.radio = TextualRadio(station=station, player=self.player)
