@@ -32,9 +32,9 @@ import datetime
 # 3rd party
 from PIL import Image
 from textual.app import ComposeResult
-from textual.containers import VerticalScroll
+from textual.containers import VerticalGroup, VerticalScroll
 from textual.reactive import reactive
-from textual.widgets import Digits, Label, Log, ProgressBar
+from textual.widgets import Digits, Label, ProgressBar, RichLog
 
 # this package
 from cyberpunk_radio_simulator.logos import logo_to_rich
@@ -81,7 +81,7 @@ class Clock(Digits):
 		self.update(f"{clock:%T}")
 
 
-class SubtitleLog(Log):
+class SubtitleLog(RichLog):
 	"""
 	Log widget for the DJ subtitles etc.
 	"""
@@ -90,9 +90,14 @@ class SubtitleLog(Log):
 	SubtitleLog {
 		height: 1fr;
 		width: 1fr;
-		margin: 0 2;
+		border: tall $border-blurred;
+        padding: 0 1;
+		margin-top: 1;
 	}
 	"""
+
+	def write_line(self, message: str) -> None:  # noqa: D102
+		self.write(message)
 
 
 class TrackProgressLabel(Label):
@@ -100,8 +105,10 @@ class TrackProgressLabel(Label):
 	Widget for displaying the current track position time, and the total track length.
 	"""
 
-	track_position = reactive(0.0)
-	duration = reactive(0.0)
+	track_position: reactive[float] = reactive(0.0)
+	duration: reactive[float] = reactive(0.0)
+	paused: reactive[bool] = reactive(False)
+	muted: reactive[bool] = reactive(False)
 
 	@staticmethod
 	def format_time(seconds: float) -> str:
@@ -119,7 +126,17 @@ class TrackProgressLabel(Label):
 	def render(self) -> str:  # noqa: D102
 		pos_td = self.format_time(seconds=self.track_position)
 		dur_td = self.format_time(seconds=self.duration)
-		return f"{pos_td}/{dur_td}"
+		elements = [f"{pos_td} / {dur_td}"]
+		if self.paused:
+			elements.append('⏸')
+		else:
+			elements.append(' ')
+		if self.muted:
+			elements.append('🔇')
+		else:
+			elements.append("  ")
+
+		return ' '.join(elements)
 
 
 class TrackProgress(ProgressBar):
@@ -127,8 +144,19 @@ class TrackProgress(ProgressBar):
 	Widget for displaying the position in the track, with a progress bar and times.
 	"""
 
+	DEFAULT_CSS = """
+	TrackProgress {
+		width: auto;
+		height: 2;
+		layout: horizontal;
+	}
+	"""
+	# TODO: add spinner while playing and pause icon when paused (and mute icon when muted)
+
 	track_position: reactive[float] = reactive(30)
 	duration: reactive[float] = reactive(120)
+	paused: reactive[bool] = reactive(False)
+	muted: reactive[bool] = reactive(False)
 
 	def set_track_pos(self, track_position: float, duration: float) -> None:
 		"""
@@ -143,11 +171,14 @@ class TrackProgress(ProgressBar):
 		self.update(total=duration, progress=track_position)
 
 	def compose(self) -> ComposeResult:  # noqa: D102
-		yield from super().compose()
-		yield TrackProgressLabel().data_bind(
-				track_position=TrackProgress.track_position,
-				duration=TrackProgress.duration,
-				)
+		with VerticalGroup():
+			yield from super().compose()
+			yield TrackProgressLabel().data_bind(
+					track_position=TrackProgress.track_position,
+					duration=TrackProgress.duration,
+					paused=TrackProgress.paused,
+					muted=TrackProgress.muted,
+					)
 
 
 class TrackInfoLabel(Label):
@@ -159,7 +190,6 @@ class TrackInfoLabel(Label):
 	TrackInfoLabel {
 		width: 40vw;
 		max-width: 40vw;
-		background: red 20%;
 	}
 	"""
 
@@ -176,6 +206,8 @@ class StationLogo(Label):
 		align-horizontal: center;
 		align-vertical: middle;
 		height: 1fr;
+		text-align: center;
+		background: #0e0204;
 	}
 	"""
 
@@ -191,5 +223,5 @@ class StationLogo(Label):
 				# Taller than wide
 				return logo_to_rich(self.img, 35)
 			else:
-				return logo_to_rich(self.img, 50)
+				return logo_to_rich(self.img, 45)
 		return ''

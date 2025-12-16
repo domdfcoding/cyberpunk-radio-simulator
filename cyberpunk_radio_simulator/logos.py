@@ -75,3 +75,13 @@ def get_logo_tight(station_name: str, data_directory: PathPlus) -> Image.Image:
 	img = img.crop(img.getbbox())
 
 	return img
+
+
+def apply_colour(
+		img: Image.Image,
+		background_colour: str = "#0e0204",
+		graphic_colour: str = "#77ffff",
+		) -> Image.Image:
+	background: Image.Image = Image.new("RGBA", img.size, background_colour)
+	foreground: Image.Image = Image.new("RGBA", img.size, graphic_colour)
+	return Image.composite(foreground, background, img)

@@ -28,6 +28,7 @@ Textual terminal GUI for playback.
 
 # stdlib
 from dataclasses import dataclass
+from typing import cast
 
 # 3rd party
 from domdf_python_tools.paths import PathPlus
@@ -37,16 +38,19 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import HorizontalGroup, HorizontalScroll, VerticalGroup
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Label, Log
+from textual.widgets import Footer, Header, Label, OptionList
+from textual.widgets.option_list import Option
 
 # this package
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Tune
-from cyberpunk_radio_simulator.logos import get_logo_tight
+from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import Clock, StationLogo, SubtitleLog, TrackInfoLabel, TrackProgress
 
 __all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio"]
+
+station_names = list(stations)
 
 
 class TextualRadio(AsyncRadio):
@@ -59,7 +63,7 @@ class TextualRadio(AsyncRadio):
 	:param output_directory: Directory containing files extracted from the game.
 	"""
 
-	log_widget: Log
+	log_widget: SubtitleLog
 
 	def log(self, msg: str) -> None:  # noqa: D102
 		self.log_widget.write_line(msg)
@@ -83,7 +87,12 @@ class MainScreen(Screen):
 			yield Clock("12:34:56")
 
 		with HorizontalScroll():
-			yield SubtitleLog(id="log")
+			with VerticalGroup():
+				yield OptionList(
+						*(Option(station, id=station) for station in station_names),
+						id="station-selector",
+						)
+				yield SubtitleLog(id="log", wrap=True)
 			yield StationLogo(id="station-logo")
 
 
@@ -117,7 +126,7 @@ class RadioportApp(App):
 	BINDINGS = [
 			Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
 			Binding(key='q', action="quit", description="Quit the app"),
-			Binding(key='p', action="play", description="Play/Pause"),
+			Binding(key='p', action="play", description="⏯ Play/Pause"),
 			Binding(key='m', action="mute", description="Mute"),
 			Binding(key='P', action="pause_next", description="Pause after current track"),
 			Binding(key='<', action="previous", description="Previous Station"),
@@ -137,26 +146,34 @@ class RadioportApp(App):
 		Handler for the "Mute" button.
 		"""
 
+		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
+
 		if self.mute_state.muted:
 			self.mute_state.muted = False
+			progbar.muted = False
 			self.player.set_volume(self.mute_state.last_volume)
-			self._main_screen.query_one("#log", Log).write_line("Unmute")
+			self._main_screen.query_one("#log", SubtitleLog).write_line("Unmute")
 		else:
 			self.mute_state.muted = True
+			progbar.muted = True
 			self.mute_state.last_volume = self.player.volume
 			self.player.set_volume(0)
-			self._main_screen.query_one("#log", Log).write_line("Mute")
+			self._main_screen.query_one("#log", SubtitleLog).write_line("Mute")
 
 	def action_play(self) -> None:
 		"""
 		Handler for the "Play/Pause" button.
 		"""
 
+		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
+
 		if self.player.paused:
-			self._main_screen.query_one("#log", Log).write_line("Play")
+			self._main_screen.query_one("#log", SubtitleLog).write_line("Play")
+			progbar.paused = False
 			self.player.resume()
 		else:
-			self._main_screen.query_one("#log", Log).write_line("Pause")
+			self._main_screen.query_one("#log", SubtitleLog).write_line("Pause")
+			progbar.paused = True
 			self.player.pause()
 
 	def action_pause_next(self) -> None:
@@ -164,7 +181,7 @@ class RadioportApp(App):
 		Handler for the "Pause after track" button.
 		"""
 
-		self._main_screen.query_one("#log", Log).write_line("Pause after this track")
+		self._main_screen.query_one("#log", SubtitleLog).write_line("Pause after this track")
 
 	def load_station(self, station: RadioStation, force_jingle: bool = False) -> None:
 		"""
@@ -178,25 +195,41 @@ class RadioportApp(App):
 		self.station = station
 		self.radio.station = self.station
 
-		self._main_screen.query_one("#station-name", Label).content = self.station_data.name
+		station_name_label = self._main_screen.query_one("#station-name", Label)
+		station_name_label.content = self.station_data.name
+		if self.station_data.dj:
+			station_name_label.content += " 👤"
+		if self.station_data.has_ads:
+			station_name_label.content += " 📣"
+
+		station_selector = self._main_screen.query_one("#station-selector", OptionList)
+		station_selector.highlighted = station_names.index(self.station_data.name)
 
 		logo_label_widget = self._main_screen.query_one("#station-logo", StationLogo)
-		logo_label_widget.img = get_logo_tight(self.station_data.name, self.station.output_directory)
+		logo_label_widget.img = apply_colour(get_logo_tight(self.station_data.name, self.station.output_directory))
 
 		self.play_music(force_jingle=force_jingle)
+
+	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:  # noqa: D102
+		if event.option_list.id == "station-selector":
+			self.station_data = stations[cast(str, event.option.id)]
+
+			station = RadioStation(self.station_data, output_directory=self.data_dir)
+			self.radio = TextualRadio(station=station, player=self.player)
+
+			self.load_station(station, force_jingle=True)
 
 	def action_next(self) -> None:
 		"""
 		Handler for the "Next Station" button.
 		"""
 
-		station_names = list(stations.keys())
 		current_index = station_names.index(self.station_data.name)
 		new_index = current_index + 1
 		new_index %= len(station_names)
 
 		self.station_data = stations[station_names[new_index]]
-		self._main_screen.query_one("#log", Log).write_line("Next Station")
+		# self._main_screen.query_one("#log", SubtitleLog).write_line("Next Station")
 
 		self.load_station(RadioStation(self.station_data, output_directory=self.data_dir))
 
@@ -205,13 +238,12 @@ class RadioportApp(App):
 		Handler for the "Previous Station" button.
 		"""
 
-		station_names = list(stations.keys())
 		current_index = station_names.index(self.station_data.name)
 		new_index = current_index - 1
 		new_index %= len(station_names)
 
 		self.station_data = stations[station_names[new_index]]
-		self._main_screen.query_one("#log", Log).write_line("Previous Station")
+		# self._main_screen.query_one("#log", SubtitleLog).write_line("Previous Station")
 
 		self.load_station(RadioStation(self.station_data, output_directory=self.data_dir))
 
@@ -224,7 +256,7 @@ class RadioportApp(App):
 			(starting part way through), to simulating tuning in to the station mid song.
 		"""
 
-		self.radio.log_widget = self._main_screen.query_one("#log", Log)
+		self.radio.log_widget = self._main_screen.query_one("#log", SubtitleLog)
 		track_info_label = self._main_screen.query_one("#track-info", Label)
 
 		for event in self.station.get_events(force_jingle=force_jingle):
@@ -259,9 +291,9 @@ class RadioportApp(App):
 		self.player = Playback()
 		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
 		self.setup_radio()
-		log_widget = self._main_screen.query_one("#log", Log)
-		log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
-		log_widget.write_line("Ready")
+		log_widget = self._main_screen.query_one("#log", SubtitleLog)
+		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
+		# log_widget.write_line("Ready")
 		self.play_music()
 
 	def setup_radio(self) -> None:
