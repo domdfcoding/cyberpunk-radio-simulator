@@ -100,6 +100,9 @@ class SubtitleLog(RichLog):
 		self.write(message)
 
 
+audio_bars = "▁▂▃▄▅▆▇█▇▆▅▄▃"
+
+
 class TrackProgressLabel(Label):
 	"""
 	Widget for displaying the current track position time, and the total track length.
@@ -109,6 +112,7 @@ class TrackProgressLabel(Label):
 	duration: reactive[float] = reactive(0.0)
 	paused: reactive[bool] = reactive(False)
 	muted: reactive[bool] = reactive(False)
+	audio_bar_idx = 0
 
 	@staticmethod
 	def format_time(seconds: float) -> str:
@@ -128,9 +132,20 @@ class TrackProgressLabel(Label):
 		dur_td = self.format_time(seconds=self.duration)
 		elements = [f"{pos_td} / {dur_td}"]
 		if self.paused:
-			elements.append('⏸')
+			elements.append("  ⏸  ")
 		else:
-			elements.append(' ')
+			self.audio_bar_idx += 1
+			self.audio_bar_idx %= len(audio_bars)
+
+			elements.append(
+					''.join([
+							audio_bars[self.audio_bar_idx - 12],
+							audio_bars[self.audio_bar_idx - 9],
+							audio_bars[self.audio_bar_idx - 6],
+							audio_bars[self.audio_bar_idx - 3],
+							audio_bars[self.audio_bar_idx],
+							])
+					)
 		if self.muted:
 			elements.append('🔇')
 		else:
