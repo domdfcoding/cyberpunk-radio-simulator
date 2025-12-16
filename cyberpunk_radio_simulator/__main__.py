@@ -26,6 +26,10 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 #  OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# stdlib
+import os
+import shlex
+
 # 3rd party
 import click
 from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
@@ -183,7 +187,17 @@ def web(output_dir: str = "data") -> None:
 	# 3rd party
 	from textual_serve.server import Server
 
-	server = Server(' '.join([sys.executable, __file__, "gui", "-o", output_dir]))
+	server = Server(
+			' '.join([
+					shlex.quote(sys.executable),
+					"-m",
+					os.path.basename(os.path.dirname(__file__)),
+					"gui",
+					"-o",
+					output_dir
+					]),
+			title="Radioport"
+			)
 	server.serve(debug=True)
 
 
