@@ -37,9 +37,9 @@ from just_playback import Playback  # type: ignore[import-untyped]
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right, VerticalGroup
+from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Label, OptionList
+from textual.widgets import Footer, Header, Label, OptionList, TabPane
 from textual.widgets.option_list import Option
 
 # this package
@@ -48,6 +48,7 @@ from cyberpunk_radio_simulator.events import AdBreak, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
+		TC,
 		Clock,
 		StationLogo,
 		SubtitleLog,
@@ -98,12 +99,14 @@ class MainScreen(Screen):
 					yield Clock("12:34:56")
 
 		with HorizontalScroll():
-			with VerticalGroup():
-				yield OptionList(
-						*(Option(station, id=station) for station in station_names),
-						id="station-selector",
-						)
-				yield SubtitleLog(id="log", wrap=True)
+			with TC():
+				with TabPane("Stations", id="tab-stations"):
+					yield OptionList(
+							*(Option(station, id=station) for station in station_names),
+							id="station-selector",
+							)
+				with TabPane("Subtitles", id="tab-subtitles"):
+					yield SubtitleLog(id="log", wrap=True)
 			yield StationLogo(id="station-logo")
 
 

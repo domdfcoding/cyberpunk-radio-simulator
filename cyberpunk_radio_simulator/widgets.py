@@ -35,7 +35,7 @@ from PIL import Image
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, VerticalScroll
 from textual.reactive import reactive
-from textual.widgets import Digits, Label, ProgressBar, RichLog
+from textual.widgets import Digits, Label, ProgressBar, RichLog, TabbedContent
 
 # this package
 from cyberpunk_radio_simulator.logos import logo_to_rich
@@ -45,6 +45,7 @@ __all__ = [
 		"Column",
 		"StationLogo",
 		"SubtitleLog",
+		"TC",
 		"ThirdColumn",
 		"TrackInfoLabel",
 		"TrackProgress",
@@ -278,3 +279,18 @@ class ThirdColumn(VerticalGroup):
         overflow: hidden hidden;
     }
     """
+
+
+class TC(TabbedContent):
+	"""
+	Customised ``TabbedContent`` with a width of ``1fr``.
+	"""
+
+	DEFAULT_CSS = """
+	TC {
+	width: 1fr;
+	}
+	"""
+
+	def on_mount(self) -> None:  # noqa: D102
+		self.show_tab("tab-subtitles")
