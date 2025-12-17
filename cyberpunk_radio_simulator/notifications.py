@@ -36,9 +36,9 @@ from notify_rs import URGENCY_CRITICAL, Notification, NotificationHandle
 __all__ = ["NotificationMessage", "NotificationSender"]
 
 if sys.platform == "win32":
-	_N = TypeVar("_N", Notification)
+	_N = TypeVar("_N", bound=Notification)
 else:
-	_N = TypeVar("_N", Notification, NotificationHandle)
+	_N = TypeVar("_N", Notification, NotificationHandle, covariant=True)
 
 
 class NotificationMessage(NamedTuple):
