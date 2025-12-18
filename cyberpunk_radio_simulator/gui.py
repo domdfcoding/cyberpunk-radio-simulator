@@ -34,7 +34,7 @@ from typing import cast
 # 3rd party
 from domdf_python_tools.paths import PathPlus
 from just_playback import Playback  # type: ignore[import-untyped]
-from textual import work
+from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right
@@ -78,6 +78,13 @@ class TextualRadio(AsyncRadio):
 		self.log_widget.write_line(msg)
 
 
+class _OL(OptionList):
+
+	async def on_click(self, event: events.Click) -> None:
+		if event.chain < 2:
+			event.prevent_default()
+
+
 class MainScreen(Screen):
 	"""
 	The main screen of the app.
@@ -101,7 +108,7 @@ class MainScreen(Screen):
 		with HorizontalScroll():
 			with TC():
 				with TabPane("Stations", id="tab-stations"):
-					yield OptionList(
+					yield _OL(
 							*(Option(station, id=station) for station in station_names),
 							id="station-selector",
 							)
