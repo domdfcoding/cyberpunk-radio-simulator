@@ -47,7 +47,8 @@ from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Event, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
-from cyberpunk_radio_simulator.media_control.mpris import DBusAdapter, TrackMetadata
+from cyberpunk_radio_simulator.media_control import MediaControl
+from cyberpunk_radio_simulator.media_control.player import TrackMetadata
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
@@ -227,7 +228,7 @@ class RadioportApp(App):
 		else:
 			self.pause_song()
 
-		self.update_mpris()
+		self.media_control.on_playpause()
 
 	@property
 	def playing(self) -> bool:
@@ -368,7 +369,7 @@ class RadioportApp(App):
 			# TODO: save state when changing station
 			self.track_info = TrackInfo.from_event(event)
 			track_info_label.update(str(self.track_info))
-			self.set_timer(0.5, self.update_mpris)
+			self.set_timer(0.5, self.media_control.on_playback)
 			await self.radio.play_event_async(event)
 
 	def setup_track_position(self) -> None:
@@ -391,17 +392,8 @@ class RadioportApp(App):
 		Setup MPRIS2 D-Bus interface.
 		"""
 
-		self.db = DBusAdapter()
-		self.db.setup(self)
-		self.db.start_background()
-		# self.set_interval(0.5, self.update_mpris)
-
-	def update_mpris(self) -> None:
-		"""
-		Update MPRIS state.
-		"""
-
-		self.db.schedule_update()
+		self.media_control = MediaControl()
+		self.media_control.init(self)
 
 	def on_ready(self) -> None:  # noqa: D102
 		self.track_info = TrackInfo()

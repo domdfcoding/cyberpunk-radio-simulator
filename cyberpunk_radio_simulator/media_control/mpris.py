@@ -32,12 +32,15 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import TYPE_CHECKING, Protocol, TypedDict, no_type_check
+from typing import TYPE_CHECKING, no_type_check
 
 # 3rd party
 from dbus_next import BusType, Variant
 from dbus_next.aio import MessageBus
 from dbus_next.service import PropertyAccess, ServiceInterface, dbus_property, method
+
+# this package
+from cyberpunk_radio_simulator.media_control.player import Player
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -123,45 +126,6 @@ class MPRISInterface(ServiceInterface):
 	@dbus_property(access=PropertyAccess.READ)
 	def CanSetFullscreen(self) -> 'b':
 		return False
-
-
-class TrackMetadata(TypedDict):
-	"""
-	The return type of :meth:`~.get_track_metadata`.
-	"""
-
-	title: str
-	artist: str
-	album: str
-	album_art: str
-	track_id: int
-
-
-class Player(Protocol):
-	"""
-	Protocol interface for media players.
-	"""
-
-	@property
-	def playing(self) -> bool: ...
-
-	@property
-	def position(self) -> float: ...
-
-	@property
-	def song_length(self) -> float: ...
-
-	def next(self) -> None: ...
-
-	def previous(self) -> None: ...
-
-	def pause_song(self) -> None: ...
-
-	def resume_song(self) -> None: ...
-
-	def stop(self) -> None: ...
-
-	def get_track_metadata(self) -> TrackMetadata: ...
 
 
 class MPRISPlayerInterface(ServiceInterface):

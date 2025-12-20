@@ -26,3 +26,74 @@ Desktop media control integration.
 #  OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 #  OR OTHER DEALINGS IN THE SOFTWARE.
 #
+
+# stdlib
+import sys
+
+# this package
+from cyberpunk_radio_simulator.media_control.player import Player
+
+__all__ = ["MediaControl"]
+
+if sys.platform == "win32":
+	# this package
+	from .smtc import MediaControlWin32 as MediaControlWin
+
+	class MediaControl(MediaControlWin):
+		"""
+		Desktop media controls interface.
+		"""
+
+		def __init__(self) -> None:
+			super().__init__()
+
+		def init(self, player: Player) -> None:
+			"""
+			Initialize with player.
+
+			:param player:
+			"""
+
+			return super().init(player)
+
+		def on_playback(self) -> None:
+			return super().on_playback()
+
+		def on_playpause(self) -> None:
+			return super().on_playpause()
+
+else:
+	# this package
+	from .mpris import DBusAdapter
+
+	class MediaControl:
+		"""
+		Desktop media controls interface.
+		"""
+
+		def __init__(self) -> None:
+			self.adapter: DBusAdapter = DBusAdapter()
+
+		def init(self, player: Player) -> None:
+			"""
+			Initialize with player and start background loop.
+
+			:param player:
+			"""
+
+			self.adapter.setup(player)
+			self.adapter.start_background()
+
+		def on_playback(self) -> None:
+			"""
+			Handle playback events.
+			"""
+
+			return self.adapter.on_playback()
+
+		def on_playpause(self) -> None:
+			"""
+			Handle play/pause events.
+			"""
+
+			return self.adapter.on_playback()
