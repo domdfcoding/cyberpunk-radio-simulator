@@ -163,8 +163,7 @@ class Extractor(Directories):
 
 		audio_filename_prefix = ad_data.audio_filename_prefix + '_'
 
-		# TODO: add attribute to advert class
-		if hasattr(ad_data, "general_audio") and ad_data.general_audio:
+		if ad_data.general_audio:
 			archive_file = self.audio_general_archive_file
 			archive = self.audio_general_archive
 			directory = r"base\localization\common\vo"
