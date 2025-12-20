@@ -448,7 +448,7 @@ class DBusAdapter:
 			self.bus.export("/org/mpris/MediaPlayer2", self.player_interface)
 			self.bus.export("/org/mpris/MediaPlayer2", MPRISPlaylistsInterface(self))
 
-			await self.bus.request_name("org.mpris.MediaPlayer2.Radioport")
+			await self.bus.request_name("org.mpris.MediaPlayer2.radioport")
 
 			self._started = True
 

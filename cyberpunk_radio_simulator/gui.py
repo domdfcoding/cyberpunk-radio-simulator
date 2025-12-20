@@ -47,7 +47,7 @@ from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Event, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
-from cyberpunk_radio_simulator.mpris import DBusAdapter, TrackMetadata
+from cyberpunk_radio_simulator.media_control.mpris import DBusAdapter, TrackMetadata
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
