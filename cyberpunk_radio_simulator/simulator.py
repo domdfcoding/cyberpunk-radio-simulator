@@ -42,6 +42,7 @@ from cp2077_extractor.track import Track
 from cp2077_extractor.utils import InfiniteList, to_snake_case
 from domdf_python_tools.typing import PathLike
 from just_playback import Playback  # type: ignore[import-untyped]
+from notify_rs import URGENCY_NORMAL
 
 # this package
 from cyberpunk_radio_simulator.data import StationData
@@ -256,6 +257,9 @@ class Radio:
 	#: If :py:obj:`True`, skip all remaining actions for this event (stop playback, don't sleep, etc.)
 	skip: bool = False
 
+	#: Urgency to send the notification with.
+	notification_urgency: int = URGENCY_NORMAL
+
 	def __init__(self, station: RadioStation, player: Playback):
 		self.station = station
 		self.player = player
@@ -287,7 +291,8 @@ class Radio:
 		NotificationSender.send(
 				summary=self.station.station.name,
 				body=f"{tune.artist} – {tune.title}",
-				icon_file=icon_file.as_posix()
+				icon_file=icon_file.as_posix(),
+				urgency=self.notification_urgency,
 				)
 
 	def play_tune(self, tune: Tune) -> None:

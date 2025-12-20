@@ -31,7 +31,7 @@ import sys
 from typing import NamedTuple, TypeVar
 
 # 3rd party
-from notify_rs import URGENCY_CRITICAL, Notification, NotificationHandle
+from notify_rs import URGENCY_NORMAL, Notification, NotificationHandle
 
 __all__ = ["NotificationMessage", "NotificationSender"]
 
@@ -83,20 +83,28 @@ class NotificationSender:
 		notification_handle: NotificationHandle | None = None
 
 	@classmethod
-	def send_message(cls, message: NotificationMessage) -> None:
+	def send_message(cls, message: NotificationMessage, urgency: int = URGENCY_NORMAL) -> None:
 		"""
 		Send a notification with the given message.
+
+		:param message:
+		:param urgency:
 		"""
 
 		if cls.notification_handle:
-			message.update(cls.notification_handle).timeout(5000).urgency(URGENCY_CRITICAL).update()
+			message.update(cls.notification_handle).timeout(5000).urgency(urgency).update()
 		else:
-			cls.notification_handle = message.as_notification().timeout(5000).urgency(URGENCY_CRITICAL).show()
+			cls.notification_handle = message.as_notification().timeout(5000).urgency(urgency).show()
 
 	@classmethod
-	def send(cls, summary: str, body: str, icon_file: str) -> None:
+	def send(cls, summary: str, body: str, icon_file: str, urgency: int = URGENCY_NORMAL) -> None:
 		"""
 		Send a notification with the given summary, body and icon.
+
+		:param summary:
+		:param body:
+		:param icon_file:
+		:param urgency:
 		"""
 
-		cls.send_message(NotificationMessage(summary=summary, body=body, icon_file=icon_file))
+		cls.send_message(NotificationMessage(summary=summary, body=body, icon_file=icon_file), urgency)

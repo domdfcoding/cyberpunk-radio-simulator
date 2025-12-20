@@ -68,25 +68,12 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 	Extract relevant files and data from the game.
 	"""
 
-	# 3rd party
-	import dom_toml
-
 	# this package
+	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.extractor import Extractor
-	config = dom_toml.load("config.toml")
 
-	if not install_dir:
-		install_dir = config["config"]["install_dir"]
-
-	if "output_dir" in config["config"]:
-		output_dir = config["config"]["output_dir"]
-
-	assert isinstance(install_dir, str)
-	assert isinstance(output_dir, str)
-
-	assert isinstance(install_dir, str)
-
-	extractor = Extractor(install_dir, output_dir)
+	config = Config("config.toml")
+	extractor = Extractor(config.get_install_dir(install_dir), config.get_output_dir(output_dir))
 
 	# From quickest to slowest
 	extractor.extract_station_logos()
@@ -113,18 +100,15 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	"""
 
 	# 3rd party
-	import dom_toml
+
+	# 3rd party
 	from just_playback import Playback  # type: ignore[import-untyped]
 
 	# this package
+	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.simulator import Radio, RadioStation
 
-	config = dom_toml.load("config.toml")
-
-	if "output_dir" in config["config"]:
-		output_dir = config["config"]["output_dir"]
-
-	assert isinstance(output_dir, str)
+	config = Config("config.toml")
 
 	# TODO: it played a song twice
 
@@ -139,7 +123,7 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	print("Tuning to", station_name)
 
 	radio = Radio(
-			station=RadioStation(station_data, output_directory=output_dir),
+			station=RadioStation(station_data, output_directory=config.get_output_dir(output_dir)),
 			player=Playback(),
 			)
 
@@ -167,10 +151,13 @@ def gui(output_dir: str = "data") -> None:
 	from domdf_python_tools.paths import PathPlus
 
 	# this package
+	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.gui import RadioportApp
 
+	config = Config("config.toml")
+
 	app = RadioportApp()
-	app.data_dir = PathPlus(output_dir)
+	app.data_dir = PathPlus(config.get_output_dir(output_dir))
 	app.run()
 
 

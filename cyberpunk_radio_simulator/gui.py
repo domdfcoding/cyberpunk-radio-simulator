@@ -43,6 +43,7 @@ from textual.widgets import Footer, Header, Label, OptionList, TabPane
 from textual.widgets.option_list import Option
 
 # this package
+from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
@@ -239,7 +240,7 @@ class RadioportApp(App):
 			self.station_data = stations[cast(str, event.option.id)]
 
 			station = RadioStation(self.station_data, output_directory=self.data_dir)
-			self.radio = TextualRadio(station=station, player=self.player)
+			# self.radio = TextualRadio(station=station, player=self.player)
 
 			self.load_station(station, force_jingle=True)
 
@@ -332,6 +333,7 @@ class RadioportApp(App):
 
 		station = RadioStation(self.station_data, output_directory=self.data_dir)
 		self.radio = TextualRadio(station=station, player=self.player)
+		self.radio.notification_urgency = Config("config.toml").get_notification_urgency()
 
 		self.load_station(station, force_jingle=True)
 
