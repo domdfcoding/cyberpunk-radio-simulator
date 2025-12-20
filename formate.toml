@@ -34,9 +34,15 @@ known_third_party = [
     "cyberpunk_radio_extractor",
     "dom_toml",
     "domdf_python_tools",
+    "just_playback",
     "moviepy",
+    "natsort",
     "networkx",
+    "notify_rs",
+    "pillow",
     "playsound3",
+    "textual",
+    "textual_serve",
 ]
 known_first_party = [ "cyberpunk_radio_simulator",]
 
