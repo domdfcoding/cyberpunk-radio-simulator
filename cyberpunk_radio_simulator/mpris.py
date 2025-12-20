@@ -48,8 +48,16 @@ if TYPE_CHECKING:
 	d = float
 	o = int
 	x = int
+	u = int
 
-__all__ = ["DBusAdapter", "MPRISInterface", "MPRISPlayerInterface", "Player", "TrackMetadata"]
+__all__ = [
+		"DBusAdapter",
+		"MPRISInterface",
+		"MPRISPlayerInterface",
+		"MPRISPlaylistsInterface",
+		"Player",
+		"TrackMetadata",
+		]
 
 
 class MPRISInterface(ServiceInterface):
@@ -374,6 +382,21 @@ class MPRISPlayerInterface(ServiceInterface):
 		self._shuffle = val
 
 
+class MPRISPlaylistsInterface(ServiceInterface):
+	"""
+	MPRIS2 Playlists Interface.
+
+	Optional but an error is raised if it doesn't exist 🤷.
+	"""
+
+	def __init__(self, adapter: "DBusAdapter") -> None:
+		super().__init__("org.mpris.MediaPlayer2.Playlists")
+
+	@dbus_property(access=PropertyAccess.READ)
+	def PlaylistCount(self) -> 'u':
+		return 0
+
+
 class DBusAdapter:
 	"""
 	Adapter for dbus-next MPRIS implementation.
@@ -423,6 +446,7 @@ class DBusAdapter:
 
 			self.bus.export("/org/mpris/MediaPlayer2", self.root_interface)
 			self.bus.export("/org/mpris/MediaPlayer2", self.player_interface)
+			self.bus.export("/org/mpris/MediaPlayer2", MPRISPlaylistsInterface(self))
 
 			await self.bus.request_name("org.mpris.MediaPlayer2.Radioport")
 
