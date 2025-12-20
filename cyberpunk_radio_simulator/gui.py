@@ -29,7 +29,7 @@ Textual terminal GUI for playback.
 # stdlib
 import random
 from dataclasses import dataclass
-from typing import cast
+from typing import NamedTuple, cast
 
 # 3rd party
 from domdf_python_tools.paths import PathPlus
@@ -45,9 +45,9 @@ from textual.widgets.option_list import Option
 # this package
 from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
-from cyberpunk_radio_simulator.events import AdBreak, Tune
+from cyberpunk_radio_simulator.events import AdBreak, Event, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
-from cyberpunk_radio_simulator.mpris import DBusAdapter
+from cyberpunk_radio_simulator.mpris import DBusAdapter, TrackMetadata
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
@@ -59,7 +59,7 @@ from cyberpunk_radio_simulator.widgets import (
 		TrackProgress
 		)
 
-__all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio"]
+__all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio", "TrackInfo"]
 
 station_names = list(stations)
 
@@ -119,53 +119,6 @@ class MainScreen(Screen):
 			yield StationLogo(id="station-logo")
 
 
-class RadioportPlayer:
-
-	def __init__(self, app: "RadioportApp") -> None:
-		self.app = app
-
-	@property
-	def playing(self) -> bool:
-		if not self.app.player.active:
-			return False
-		return not self.app.player.paused
-
-	@property
-	def position(self) -> float:
-		return self.app.player.curr_pos
-
-	@property
-	def song_length(self) -> float:
-		return self.app.player.duration
-
-	def next(self) -> None:
-		self.app.action_next()
-
-	def previous(self) -> None:
-		self.app.action_previous()
-
-	def pause_song(self) -> None:
-		self.app.do_pause()
-
-	def resume_song(self) -> None:
-		self.app.do_play()
-
-	def stop(self) -> None:
-		self.app.do_pause()
-
-	# def seek_to(self, pos: float) -> None:
-	# 	pass  # TODO
-
-	def get_track_metadata(self) -> dict:
-		track_info_label = self.app._main_screen.query_one("#track-info", Label)
-		# TODO: separate title and artist, and album art path
-		return {
-				"title": track_info_label.content,
-				"artist": '',
-				"album": self.app.station_data.name,
-				}
-
-
 @dataclass
 class MuteState:
 	"""
@@ -174,6 +127,39 @@ class MuteState:
 
 	muted: bool = False
 	last_volume: float = 1.0
+
+
+class TrackInfo(NamedTuple):
+	"""
+	The current track's artist and title.
+	"""
+
+	artist: str = ''
+	title: str = "No Track"
+
+	@classmethod
+	def from_event(cls, event: Event) -> "TrackInfo":
+		"""
+		Construct a :class:`~.TrackInfo` from an :class:`~.Event`.
+
+		:param event:
+		"""
+
+		if isinstance(event, Tune):
+			return cls(
+					artist=event.artist or "Unknown Artist",
+					title=event.title or "Unknown Title",
+					)
+		elif isinstance(event, AdBreak):
+			return cls(title="Just Ads")
+		else:
+			return cls(title="No Track")
+
+	def __str__(self) -> str:
+		if self.artist:
+			return f"{self.artist} – {self.title}"
+		else:
+			return self.title
 
 
 class RadioportApp(App):
@@ -187,6 +173,7 @@ class RadioportApp(App):
 	radio: TextualRadio
 	player: Playback
 	mute_state: MuteState
+	track_info: TrackInfo
 
 	CSS = """
 	Screen { align: center middle; }
@@ -236,11 +223,37 @@ class RadioportApp(App):
 		"""
 
 		if self.player.paused:
-			self.do_play()
+			self.resume_song()
 		else:
-			self.do_pause()
+			self.pause_song()
 
-	def do_play(self) -> None:
+	@property
+	def playing(self) -> bool:
+		"""
+		Is the radio currently playing?
+		"""  # noqa: D400
+
+		if not self.player.active:
+			return False
+		return not self.player.paused
+
+	@property
+	def position(self) -> float:
+		"""
+		The current track position, in seconds.
+		"""
+
+		return self.player.curr_pos
+
+	@property
+	def song_length(self) -> float:
+		"""
+		The length of the current track, in seconds.
+		"""
+
+		return self.player.duration
+
+	def resume_song(self) -> None:
 		"""
 		Play, regardless of whether we're already playing.
 		"""
@@ -249,7 +262,7 @@ class RadioportApp(App):
 		self._main_screen.query_one("#track-progress", TrackProgress).paused = False
 		self.player.resume()
 
-	def do_pause(self) -> None:
+	def pause_song(self) -> None:
 		"""
 		Pause, regardless of whether we're already paused.
 		"""
@@ -257,6 +270,8 @@ class RadioportApp(App):
 		self._main_screen.query_one("#log", SubtitleLog).write_line("Pause")
 		self._main_screen.query_one("#track-progress", TrackProgress).paused = True
 		self.player.pause()
+
+	stop = pause_song
 
 	def action_pause_next(self) -> None:
 		"""
@@ -332,6 +347,9 @@ class RadioportApp(App):
 
 		self.load_station(RadioStation(self.station_data, output_directory=self.data_dir))
 
+	next = action_next
+	previous = action_previous
+
 	@work(exclusive=True)
 	async def play_music(self, force_jingle: bool = True) -> None:
 		"""
@@ -346,12 +364,8 @@ class RadioportApp(App):
 
 		for event in self.station.get_events(force_jingle=force_jingle):
 			# TODO: save state when changing station
-			if isinstance(event, Tune):
-				track_info_label.update(f"{event.artist or 'Unknown Artist'} – {event.title or 'Unknown Title'}")
-			elif isinstance(event, AdBreak):
-				track_info_label.update("Just Ads")
-			else:
-				track_info_label.update("No Track")
+			self.track_info = TrackInfo.from_event(event)
+			track_info_label.update(str(self.track_info))
 			await self.radio.play_event_async(event)
 
 	def setup_track_position(self) -> None:
@@ -367,7 +381,7 @@ class RadioportApp(App):
 		"""
 
 		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
-		progbar.set_track_pos(self.player.curr_pos, self.player.duration)
+		progbar.set_track_pos(self.position, self.song_length)
 
 	def setup_mpris(self) -> None:
 		"""
@@ -375,7 +389,7 @@ class RadioportApp(App):
 		"""
 
 		self.db = DBusAdapter()
-		self.db.setup(RadioportPlayer(self))
+		self.db.setup(self)
 		self.db.start_background()
 		self.set_interval(0.5, self.update_mpris)
 
@@ -387,6 +401,7 @@ class RadioportApp(App):
 		self.db.schedule_update()
 
 	def on_ready(self) -> None:  # noqa: D102
+		self.track_info = TrackInfo()
 		self.setup_mpris()
 
 		self.setup_track_position()
@@ -414,6 +429,20 @@ class RadioportApp(App):
 		self.radio.notification_urgency = Config("config.toml").get_notification_urgency()
 
 		self.load_station(station, force_jingle=True)
+
+	def get_track_metadata(self) -> TrackMetadata:
+		"""
+		Returns the track title, artist, album name, and album art path (as file URL).
+		"""
+
+		album_art = self.station.station_logos_directory.joinpath(f"{self.station_data.name}.png").abspath()
+		return {
+				"title": self.track_info.title,
+				"artist": self.track_info.artist,
+				"album": self.station_data.name,
+				"album_art": album_art.as_uri(),
+				"track_id": 1234,  # TODO
+				}
 
 
 if __name__ == "__main__":

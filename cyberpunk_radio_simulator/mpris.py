@@ -32,27 +32,24 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import TYPE_CHECKING, Protocol, no_type_check
+from typing import TYPE_CHECKING, Protocol, TypedDict, no_type_check
 
 # 3rd party
 from dbus_next import BusType, Variant
 from dbus_next.aio import MessageBus
 from dbus_next.service import PropertyAccess, ServiceInterface, dbus_property, method
-from domdf_python_tools.paths import PathPlus
-
-# from api.protocols import PyMusicTermPlayer
-# from api.ytmusic import SongData
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+	# String types used by dbus-next
 	b = bool
 	s = str
 	d = float
 	o = int
 	x = int
 
-__all__ = ["DBusAdapter", "MPRISInterface", "MPRISPlayerInterface", "Player"]
+__all__ = ["DBusAdapter", "MPRISInterface", "MPRISPlayerInterface", "Player", "TrackMetadata"]
 
 
 class MPRISInterface(ServiceInterface):
@@ -120,6 +117,18 @@ class MPRISInterface(ServiceInterface):
 		return False
 
 
+class TrackMetadata(TypedDict):
+	"""
+	The return type of :meth:`~.get_track_metadata`.
+	"""
+
+	title: str
+	artist: str
+	album: str
+	album_art: str
+	track_id: int
+
+
 class Player(Protocol):
 	"""
 	Protocol interface for media players.
@@ -144,9 +153,7 @@ class Player(Protocol):
 
 	def stop(self) -> None: ...
 
-	# def seek_to(self, pos: float) -> None: ...
-
-	def get_track_metadata(self) -> dict: ...  # TODO: TypedDict
+	def get_track_metadata(self) -> TrackMetadata: ...
 
 
 class MPRISPlayerInterface(ServiceInterface):
@@ -274,16 +281,14 @@ class MPRISPlayerInterface(ServiceInterface):
 
 		try:
 
-			# track_id = f"/org/mpris/MediaPlayer2/Track/{self.adapter.player.current_song_index}"
 			track_meta = self.adapter.player.get_track_metadata()
-			track_id = f"/org/mpris/MediaPlayer2/Track/1234"  # TODO
+			track_id = f"/org/mpris/MediaPlayer2/Track/{track_meta['track_id']}"
 			length = int(self.adapter.player.song_length * 1000000)
-			album_artwork = (PathPlus("data") / "artwork/stations" / "88.9 Pacific Dreams.png").abspath().as_uri(),
 
 			metadata = {
 					"mpris:trackid": Variant('o', track_id),
 					"mpris:length": Variant('x', length),
-					"mpris:artUrl": Variant('s', album_artwork),
+					"mpris:artUrl": Variant('s', track_meta["album_art"]),
 					"xesam:title": Variant('s', track_meta["title"]),
 					"xesam:album": Variant('s', track_meta["album"]),
 					"xesam:artist": Variant("as", [track_meta["artist"]]),

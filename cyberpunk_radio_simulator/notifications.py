@@ -31,6 +31,7 @@ import sys
 from typing import NamedTuple, TypeVar
 
 # 3rd party
+from domdf_python_tools.typing import PathLike
 from notify_rs import URGENCY_NORMAL, Notification, NotificationHandle
 
 __all__ = ["NotificationMessage", "NotificationSender"]
@@ -53,7 +54,7 @@ class NotificationMessage(NamedTuple):
 	body: str
 
 	#: Path to an icon to show in the notification.
-	icon_file: str
+	icon_file: PathLike
 
 	def as_notification(self) -> Notification:
 		"""
@@ -97,7 +98,7 @@ class NotificationSender:
 			cls.notification_handle = message.as_notification().timeout(5000).urgency(urgency).show()
 
 	@classmethod
-	def send(cls, summary: str, body: str, icon_file: str, urgency: int = URGENCY_NORMAL) -> None:
+	def send(cls, summary: str, body: str, icon_file: PathLike, urgency: int = URGENCY_NORMAL) -> None:
 		"""
 		Send a notification with the given summary, body and icon.
 

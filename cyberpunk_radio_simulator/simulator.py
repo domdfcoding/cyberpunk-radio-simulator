@@ -284,14 +284,13 @@ class Radio:
 		Send a desktop notification for the tune being played.
 		"""
 
-		# TODO: allow PathLike to be passed directly to notification
 		icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
 
 		# TODO: cancel unsend ones when switching station
 		NotificationSender.send(
 				summary=self.station.station.name,
 				body=f"{tune.artist} – {tune.title}",
-				icon_file=icon_file.as_posix(),
+				icon_file=icon_file,
 				urgency=self.notification_urgency,
 				)
 
