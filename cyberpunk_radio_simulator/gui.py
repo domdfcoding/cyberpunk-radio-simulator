@@ -227,6 +227,8 @@ class RadioportApp(App):
 		else:
 			self.pause_song()
 
+		self.update_mpris()
+
 	@property
 	def playing(self) -> bool:
 		"""
@@ -366,6 +368,7 @@ class RadioportApp(App):
 			# TODO: save state when changing station
 			self.track_info = TrackInfo.from_event(event)
 			track_info_label.update(str(self.track_info))
+			self.set_timer(0.5, self.update_mpris)
 			await self.radio.play_event_async(event)
 
 	def setup_track_position(self) -> None:
@@ -391,7 +394,7 @@ class RadioportApp(App):
 		self.db = DBusAdapter()
 		self.db.setup(self)
 		self.db.start_background()
-		self.set_interval(0.5, self.update_mpris)
+		# self.set_interval(0.5, self.update_mpris)
 
 	def update_mpris(self) -> None:
 		"""
@@ -402,14 +405,14 @@ class RadioportApp(App):
 
 	def on_ready(self) -> None:  # noqa: D102
 		self.track_info = TrackInfo()
-		self.setup_mpris()
 
 		self.setup_track_position()
 
 		self.player = Playback()
 		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
 		self.setup_radio()
-		log_widget = self._main_screen.query_one("#log", SubtitleLog)
+		self.setup_mpris()
+		# log_widget = self._main_screen.query_one("#log", SubtitleLog)
 		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
 		# log_widget.write_line("Ready")
 		self.play_music()
