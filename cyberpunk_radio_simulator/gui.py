@@ -47,6 +47,7 @@ from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
+from cyberpunk_radio_simulator.mpris import DBusAdapter
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
@@ -118,6 +119,53 @@ class MainScreen(Screen):
 			yield StationLogo(id="station-logo")
 
 
+class RadioportPlayer:
+
+	def __init__(self, app: "RadioportApp") -> None:
+		self.app = app
+
+	@property
+	def playing(self) -> bool:
+		if not self.app.player.active:
+			return False
+		return not self.app.player.paused
+
+	@property
+	def position(self) -> float:
+		return self.app.player.curr_pos
+
+	@property
+	def song_length(self) -> float:
+		return self.app.player.duration
+
+	def next(self) -> None:
+		self.app.action_next()
+
+	def previous(self) -> None:
+		self.app.action_previous()
+
+	def pause_song(self) -> None:
+		self.app.do_pause()
+
+	def resume_song(self) -> None:
+		self.app.do_play()
+
+	def stop(self) -> None:
+		self.app.do_pause()
+
+	# def seek_to(self, pos: float) -> None:
+	# 	pass  # TODO
+
+	def get_track_metadata(self) -> dict:
+		track_info_label = self.app._main_screen.query_one("#track-info", Label)
+		# TODO: separate title and artist, and album art path
+		return {
+				"title": track_info_label.content,
+				"artist": '',
+				"album": self.app.station_data.name,
+				}
+
+
 @dataclass
 class MuteState:
 	"""
@@ -187,16 +235,28 @@ class RadioportApp(App):
 		Handler for the "Play/Pause" button.
 		"""
 
-		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
-
 		if self.player.paused:
-			self._main_screen.query_one("#log", SubtitleLog).write_line("Play")
-			progbar.paused = False
-			self.player.resume()
+			self.do_play()
 		else:
-			self._main_screen.query_one("#log", SubtitleLog).write_line("Pause")
-			progbar.paused = True
-			self.player.pause()
+			self.do_pause()
+
+	def do_play(self) -> None:
+		"""
+		Play, regardless of whether we're already playing.
+		"""
+
+		self._main_screen.query_one("#log", SubtitleLog).write_line("Play")
+		self._main_screen.query_one("#track-progress", TrackProgress).paused = False
+		self.player.resume()
+
+	def do_pause(self) -> None:
+		"""
+		Pause, regardless of whether we're already paused.
+		"""
+
+		self._main_screen.query_one("#log", SubtitleLog).write_line("Pause")
+		self._main_screen.query_one("#track-progress", TrackProgress).paused = True
+		self.player.pause()
 
 	def action_pause_next(self) -> None:
 		"""
@@ -309,7 +369,25 @@ class RadioportApp(App):
 		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
 		progbar.set_track_pos(self.player.curr_pos, self.player.duration)
 
+	def setup_mpris(self) -> None:
+		"""
+		Setup MPRIS2 D-Bus interface.
+		"""
+
+		self.db = DBusAdapter()
+		self.db.setup(RadioportPlayer(self))
+		self.db.start_background()
+		self.set_interval(0.5, self.update_mpris)
+
+	def update_mpris(self) -> None:
+		"""
+		Update MPRIS state.
+		"""
+
+		self.db.schedule_update()
+
 	def on_ready(self) -> None:  # noqa: D102
+		self.setup_mpris()
 
 		self.setup_track_position()
 
