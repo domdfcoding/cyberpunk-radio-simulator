@@ -229,6 +229,9 @@ class RadioportApp(App):
 		logo_label_widget = self._main_screen.query_one("#station-logo", StationLogo)
 		logo_label_widget.img = apply_colour(get_logo_tight(self.station_data.name, self.station.output_directory))
 
+		# Reset paused indicator
+		self._main_screen.query_one("#track-progress", TrackProgress).paused = False
+
 		self.play_music(force_jingle=force_jingle)
 
 	def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:  # noqa: D102
