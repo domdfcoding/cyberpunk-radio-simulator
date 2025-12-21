@@ -37,7 +37,7 @@ from notify_rs import URGENCY_NORMAL, Notification, NotificationHandle
 __all__ = ["NotificationMessage", "NotificationSender"]
 
 if sys.platform == "win32":
-	_N = TypeVar("_N", bound=Notification)
+	_N = Notification
 else:
 	_N = TypeVar("_N", Notification, NotificationHandle, covariant=True)
 
@@ -80,10 +80,7 @@ class NotificationSender:
 
 	# TODO: support for Textual's notifications
 	# TODO: I think macOS returns NotificationHandle but it can't do updates. Need a can_update flag.
-	if sys.platform == "win32":
-		notification_handle: None = None
-	else:
-		notification_handle: NotificationHandle | None = None
+	notification_handle: NotificationHandle | None = None
 
 	@classmethod
 	def send_message(cls, message: NotificationMessage, urgency: int = URGENCY_NORMAL) -> None:
