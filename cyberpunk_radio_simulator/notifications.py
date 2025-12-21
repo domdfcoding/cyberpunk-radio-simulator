@@ -80,7 +80,7 @@ class NotificationSender:
 
 	# TODO: support for Textual's notifications
 	# TODO: I think macOS returns NotificationHandle but it can't do updates. Need a can_update flag.
-	notification_handle: NotificationHandle | None = None
+	notification_handle: NotificationHandle | Notification | None = None
 
 	@classmethod
 	def send_message(cls, message: NotificationMessage, urgency: int = URGENCY_NORMAL) -> None:
@@ -91,7 +91,7 @@ class NotificationSender:
 		:param urgency:
 		"""
 
-		if cls.notification_handle:
+		if cls.notification_handle and hasattr(cls, "update"):
 			message.update(cls.notification_handle).timeout(5000).urgency(urgency).update()
 		else:
 			cls.notification_handle = message.as_notification().timeout(5000).urgency(urgency).show()
