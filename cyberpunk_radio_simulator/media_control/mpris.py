@@ -370,25 +370,26 @@ class MPRISPlaylistsInterface(ServiceInterface):
 class DBusAdapter:
 	"""
 	Adapter for dbus-next MPRIS implementation.
+
+	:param player: Media player to control and read state from.
 	"""
 
-	def __init__(self) -> None:
-		self.player: Player | None = None
-		self.bus: MessageBus | None = None
-		self.root_interface: MPRISInterface | None = None
-		self.player_interface: MPRISPlayerInterface | None = None
-		self._loop: asyncio.AbstractEventLoop | None = None
-		self._thread: threading.Thread | None = None
-		self._started = False
+	player: Player
+	bus: MessageBus | None
+	root_interface: MPRISInterface | None
+	player_interface: MPRISPlayerInterface | None
+	_loop: asyncio.AbstractEventLoop | None
+	_thread: threading.Thread | None
+	_started: bool
 
-	def setup(self, player: Player) -> None:
-		"""
-		Setup the adapter with a player instance.
-
-		:param player:
-		"""
-
+	def __init__(self, player: Player) -> None:
 		self.player = player
+		self.bus = None
+		self.root_interface = None
+		self.player_interface = None
+		self._loop = None
+		self._thread = None
+		self._started = False
 
 	def _run_event_loop(self, loop: asyncio.AbstractEventLoop) -> None:
 		"""
@@ -504,3 +505,15 @@ class DBusAdapter:
 	# 	"""
 	# 	Called when volume changes.
 	# 	"""
+
+
+class MediaControlMpris(DBusAdapter):
+	"""
+	Desktop media controls interface.
+
+	:param player:
+	"""
+
+	def __init__(self, player: Player) -> None:
+		super().__init__(player)
+		self.start_background()

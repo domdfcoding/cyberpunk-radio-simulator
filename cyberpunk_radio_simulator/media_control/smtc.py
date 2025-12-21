@@ -37,7 +37,7 @@ from winrt.windows.media import (  # type: ignore # nodep
 		SystemMediaTransportControlsButton,
 		SystemMediaTransportControlsButtonPressedEventArgs
 		)
-from winrt.windows.media.playback import MediaPlaybackList, MediaPlayer  # type: ignore # nodep
+from winrt.windows.media.playback import MediaPlayer  # type: ignore # nodep
 
 # this package
 from cyberpunk_radio_simulator.media_control.player import Player
@@ -50,33 +50,22 @@ logger: logging.Logger = logging.getLogger(__name__)
 class MediaControlWin32:
 	"""
 	Windows media controls interface.
+
+	:param player:
 	"""
 
-	player: Player | None
+	player: Player
 	media_player: MediaPlayer | None
 	smtc: SystemMediaTransportControls | None
-	playlist: MediaPlaybackList | None
 
-	def __init__(self) -> None:
-		self.player: Player | None = None
-		self.media_player: MediaPlayer | None = None
-		self.smtc: SystemMediaTransportControls | None = None
-		self.playlist: MediaPlaybackList | None = None
-
-	def init(self, player: Player) -> None:
-		"""
-		Attach SMTC to the player.
-
-		:param player:
-		"""
-
+	def __init__(self, player: Player) -> None:
 		self.player = player
 		self.media_player = MediaPlayer()
 		self.media_player.auto_play = True
 		self.media_player.volume = 0.0
 		# SMTC setup
 		self.smtc = self.media_player.system_media_transport_controls
-		self.smtc.shuffle_enabled = True
+		self.smtc.shuffle_enabled = False
 		self.smtc.is_play_enabled = True
 		self.smtc.is_pause_enabled = True
 		self.smtc.is_next_enabled = True
@@ -85,7 +74,6 @@ class MediaControlWin32:
 
 		def button_pressed(_: None, args: SystemMediaTransportControlsButtonPressedEventArgs) -> None:
 			logger.info("SMTC button pressed: %s", args.button)
-			assert self.player is not None
 
 			if args.button == SystemMediaTransportControlsButton.PLAY:
 				self.play()
@@ -101,9 +89,15 @@ class MediaControlWin32:
 		self.smtc.add_button_pressed(button_pressed)
 
 	def on_playback(self) -> None:
-		pass
+		"""
+		Called when playback state changes.
+		"""
 
 	def on_playpause(self) -> None:
+		"""
+		Called when play/pause state changes.
+		"""
+
 		if not self.smtc or not self.player:
 			return
 		if self.player.playing and self.player.playing:

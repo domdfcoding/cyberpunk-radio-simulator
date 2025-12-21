@@ -387,13 +387,12 @@ class RadioportApp(App):
 		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
 		progbar.set_track_pos(self.position, self.song_length)
 
-	def setup_mpris(self) -> None:
+	def setup_media_control(self) -> None:
 		"""
-		Setup MPRIS2 D-Bus interface.
+		Setup desktop media controls.
 		"""
 
-		self.media_control = MediaControl()
-		self.media_control.init(self)
+		self.media_control = MediaControl(self)
 
 	def on_ready(self) -> None:  # noqa: D102
 		self.track_info = TrackInfo()
@@ -403,7 +402,7 @@ class RadioportApp(App):
 		self.player = Playback()
 		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
 		self.setup_radio()
-		self.setup_mpris()
+		self.setup_media_control()
 		# log_widget = self._main_screen.query_one("#log", SubtitleLog)
 		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
 		# log_widget.write_line("Ready")
