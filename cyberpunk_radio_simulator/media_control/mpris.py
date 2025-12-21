@@ -66,6 +66,8 @@ __all__ = [
 class MPRISInterface(ServiceInterface):
 	"""
 	MPRIS2 Root Interface.
+
+	:param adapter:
 	"""
 
 	adapter: "DBusAdapter"
@@ -131,6 +133,8 @@ class MPRISInterface(ServiceInterface):
 class MPRISPlayerInterface(ServiceInterface):
 	"""
 	MPRIS2 Player Interface.
+
+	:param adapter:
 	"""
 
 	def __init__(self, adapter: "DBusAdapter") -> None:
@@ -351,6 +355,8 @@ class MPRISPlaylistsInterface(ServiceInterface):
 	MPRIS2 Playlists Interface.
 
 	Optional but an error is raised if it doesn't exist 🤷.
+
+	:param adapter:
 	"""
 
 	def __init__(self, adapter: "DBusAdapter") -> None:
@@ -378,6 +384,8 @@ class DBusAdapter:
 	def setup(self, player: Player) -> None:
 		"""
 		Setup the adapter with a player instance.
+
+		:param player:
 		"""
 
 		self.player = player

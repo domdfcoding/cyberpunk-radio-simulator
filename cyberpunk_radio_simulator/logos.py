@@ -39,6 +39,9 @@ __all__ = ["get_logo_tight", "logo_to_rich"]
 def logo_to_rich(img: Image.Image, dest_width: int) -> str:
 	"""
 	Convert a logo, as a PIL image, for displaying with rich/Textual in a terminal.
+
+	:param img:
+	:param dest_width:
 	"""
 
 	scale = img.size[0] / dest_width

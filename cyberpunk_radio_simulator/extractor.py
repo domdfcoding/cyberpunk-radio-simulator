@@ -81,6 +81,8 @@ class Directories:
 	def prepare_directories(self, create_missing: bool = False) -> None:
 		"""
 		Create output directories.
+
+		:param create_missing:
 		"""
 
 		self.audio_output_directory = self.output_directory / "audio"

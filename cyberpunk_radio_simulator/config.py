@@ -48,6 +48,8 @@ urgency_map = {
 class Config:
 	"""
 	Access application config.
+
+	:param config_file: File to read config from.
 	"""
 
 	def __init__(self, config_file: PathLike = "config.toml"):

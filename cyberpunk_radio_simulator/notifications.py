@@ -66,6 +66,8 @@ class NotificationMessage(NamedTuple):
 	def update(self, notification: _N) -> _N:
 		"""
 		Updates the values in a :class:`notify_rs.Notification`, but does not show it.
+
+		:param notification:
 		"""
 
 		return notification.body(self.body).summary(self.summary).icon(self.icon_file)

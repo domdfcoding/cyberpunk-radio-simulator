@@ -50,12 +50,12 @@ logger: logging.Logger = logging.getLogger(__name__)
 class MediaControlWin32:
 	"""
 	Windows media controls interface.
-
-	:param player:
-	:param media_player:
-	:param smtc:
-	:param playlist:
 	"""
+
+	player: Player | None
+	media_player: MediaPlayer | None
+	smtc: SystemMediaTransportControls | None
+	playlist: MediaPlaybackList | None
 
 	def __init__(self) -> None:
 		self.player: Player | None = None
@@ -66,6 +66,8 @@ class MediaControlWin32:
 	def init(self, player: Player) -> None:
 		"""
 		Attach SMTC to the player.
+
+		:param player:
 		"""
 
 		self.player = player

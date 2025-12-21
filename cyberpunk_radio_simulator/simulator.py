@@ -247,6 +247,7 @@ class Radio:
 	Plays audio files for a radio station.
 
 	:param station:
+	:param player:
 	"""
 
 	station: RadioStation
@@ -267,6 +268,8 @@ class Radio:
 	def log(self, msg: str) -> None:
 		"""
 		Log a message; by default prints to the terminal.
+
+		:param msg:
 		"""
 
 		print('\n'.join(textwrap.wrap(msg, subsequent_indent="  ")))
@@ -282,6 +285,8 @@ class Radio:
 	def _send_tune_notification(self, tune: Tune) -> None:
 		"""
 		Send a desktop notification for the tune being played.
+
+		:param tune:
 		"""
 
 		icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
