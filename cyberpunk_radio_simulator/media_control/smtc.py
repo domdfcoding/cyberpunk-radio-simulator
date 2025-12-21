@@ -31,13 +31,13 @@ Windows media controls interface.
 import logging
 
 # 3rd party
-from winrt.windows.media import (  # type: ignore # nodep
+from winrt.windows.media import (  # type: ignore[import-not-found,unused-ignore] # nodep
 		MediaPlaybackStatus,
 		SystemMediaTransportControls,
 		SystemMediaTransportControlsButton,
 		SystemMediaTransportControlsButtonPressedEventArgs
 		)
-from winrt.windows.media.playback import MediaPlayer  # type: ignore # nodep
+from winrt.windows.media.playback import MediaPlayer  # type: ignore[import-not-found,unused-ignore] # nodep
 
 # this package
 from cyberpunk_radio_simulator.media_control.player import Player
