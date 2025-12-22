@@ -94,7 +94,9 @@ class MainScreen(Screen):
 	"""
 
 	def compose(self) -> ComposeResult:  # noqa: D102
-		yield Header()
+		header = Header()
+		header.icon = '⬤'
+		yield header
 		yield Footer()
 
 		with HorizontalGroup():
