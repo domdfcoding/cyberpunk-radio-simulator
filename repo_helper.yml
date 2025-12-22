@@ -20,5 +20,9 @@ python_versions:
   '3.11':
   '3.12':
 
+extras_require:
+ wrapper:
+  - pygobject==3.50.0
+
 console_scripts:
  - radioport = cyberpunk_radio_simulator.__main__:main

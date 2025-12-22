@@ -25,6 +25,10 @@ Homepage = "https://github.com/domdfcoding/cyberpunk-radio-simulator"
 [project.scripts]
 radioport = "cyberpunk_radio_simulator.__main__:main"
 
+[project.optional-dependencies]
+wrapper = [ "pygobject==3.50.0",]
+all = [ "pygobject==3.50.0",]
+
 [tool.whey]
 base-classifiers = []
 python-versions = [ "3.10", "3.11", "3.12",]
@@ -69,3 +73,6 @@ allowed_unused = [
 
 [tool.dep_checker.name_mapping]
 pillow = "PIL"
+
+[tool.pyright]
+reportMissingModuleSource = false

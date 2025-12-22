@@ -28,7 +28,9 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 
 # stdlib
 import os
-import shlex
+import sys
+
+sys.ps1 = ">>>"  # Stops readline being imported and breaking Textual's resize signal
 
 # 3rd party
 import click
@@ -169,6 +171,7 @@ def web(output_dir: str = "data") -> None:
 	"""
 
 	# stdlib
+	import shlex
 	import sys
 
 	# 3rd party
@@ -186,6 +189,20 @@ def web(output_dir: str = "data") -> None:
 			title="Radioport"
 			)
 	server.serve(debug=True)
+
+
+@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@main.command()
+def wrapper(output_dir: str = "data") -> None:
+	"""
+	Launch the Radioport wrapper window.
+	"""
+
+	# this package
+	from cyberpunk_radio_simulator.wrapper import Wrapper
+
+	wrapper = Wrapper()
+	wrapper.run(output_dir)
 
 
 if __name__ == "__main__":

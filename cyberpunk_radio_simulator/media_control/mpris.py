@@ -30,6 +30,8 @@ D-Bus MPRIS2 Server.
 # stdlib
 import asyncio
 import logging
+import os
+import signal
 import sys
 import threading
 from typing import TYPE_CHECKING, no_type_check
@@ -79,8 +81,16 @@ class MPRISInterface(ServiceInterface):
 	@method()
 	def Raise(self) -> None:
 		"""
-		Does nothing. Exists so they widget is not greyed out as it is otherwise unclickable.
+		Raise the parent window if able.
 		"""
+
+		wrapper_ppid = None
+		try:
+			wrapper_ppid = int(os.getenv("CPRS_WRAPPER_PID", 0))
+		except ValueError:
+			pass
+		if wrapper_ppid:
+			os.kill(wrapper_ppid, signal.SIGUSR1)
 
 	@method()
 	def Quit(self) -> None:

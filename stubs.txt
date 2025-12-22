@@ -1,1 +1,2 @@
 types-networkx
+pygobject-stubs
