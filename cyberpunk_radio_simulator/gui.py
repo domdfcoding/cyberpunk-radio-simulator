@@ -36,7 +36,7 @@ from domdf_python_tools.paths import PathPlus
 from just_playback import Playback  # type: ignore[import-untyped]
 from textual import events, work
 from textual.app import App, ComposeResult
-from textual.binding import Binding
+from textual.binding import ActiveBinding, Binding
 from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Label, OptionList, TabPane
@@ -119,6 +119,21 @@ class MainScreen(Screen):
 					yield SubtitleLog(id="log", wrap=True)
 			yield StationLogo(id="station-logo")
 
+	@property
+	def active_bindings(self) -> dict[str, ActiveBinding]:  # noqa: D102
+		bindings_map = super().active_bindings
+
+		parent: RadioportApp = cast(RadioportApp, self.parent)
+
+		if parent.player.paused:
+			label = "▶ Play "
+		else:
+			label = "⏸ Pause"
+
+		bindings_map['p'] = bindings_map['p']._replace(binding=Binding(key='p', action="play", description=label))
+
+		return bindings_map
+
 
 @dataclass
 class MuteState:
@@ -175,6 +190,7 @@ class RadioportApp(App):
 	player: Playback
 	mute_state: MuteState
 	track_info: TrackInfo
+	_main_screen: MainScreen
 
 	CSS = """
 	Screen { align: center middle; }
@@ -184,7 +200,7 @@ class RadioportApp(App):
 	BINDINGS = [
 			Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
 			Binding(key='q', action="quit", description="Quit the app"),
-			Binding(key='p', action="play", description="⏯ Play/Pause"),
+			Binding(key='p', action="play", description="▶ Play "),
 			Binding(key='m', action="mute", description="Mute"),
 			Binding(key='P', action="pause_next", description="Pause after current track"),
 			Binding(key='<', action="previous", description="Previous Station"),
@@ -193,11 +209,14 @@ class RadioportApp(App):
 			Binding(key='.', action="next", description="Next Station", show=False),
 			]
 
+
 	def on_mount(self) -> None:  # noqa: D102
 		self.title = "Radioport"
 
 		self._main_screen = MainScreen()
 		self.push_screen(self._main_screen)
+
+		self.player = Playback()
 
 	def action_mute(self) -> None:
 		"""
@@ -264,6 +283,7 @@ class RadioportApp(App):
 		self._main_screen.query_one("#log", SubtitleLog).write_line("Play")
 		self._main_screen.query_one("#track-progress", TrackProgress).paused = False
 		self.player.resume()
+		self.refresh_bindings()
 
 	def pause_song(self) -> None:
 		"""
@@ -273,6 +293,7 @@ class RadioportApp(App):
 		self._main_screen.query_one("#log", SubtitleLog).write_line("Pause")
 		self._main_screen.query_one("#track-progress", TrackProgress).paused = True
 		self.player.pause()
+		self.refresh_bindings()
 
 	stop = pause_song
 
@@ -370,6 +391,7 @@ class RadioportApp(App):
 			self.track_info = TrackInfo.from_event(event)
 			track_info_label.update(str(self.track_info))
 			self.set_timer(0.5, self.media_control.on_playback)
+			self.set_timer(0.5, self.refresh_bindings)
 			await self.radio.play_event_async(event)
 
 	def setup_track_position(self) -> None:
@@ -399,7 +421,6 @@ class RadioportApp(App):
 
 		self.setup_track_position()
 
-		self.player = Playback()
 		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
 		self.setup_radio()
 		self.setup_media_control()
