@@ -424,12 +424,7 @@ class RadioportApp(App):
 		self.setup_track_position()
 
 		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
-		self.setup_radio()
-		self.setup_media_control()
-		# log_widget = self._main_screen.query_one("#log", SubtitleLog)
-		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
-		# log_widget.write_line("Ready")
-		self.play_music()
+		self.call_after_refresh(self.setup_radio)
 
 	def setup_radio(self) -> None:
 		"""
@@ -437,15 +432,16 @@ class RadioportApp(App):
 		"""
 
 		self.station_data = stations[random.choice(station_names)]
-
-		# self.station_data = stations["89.7 Growl FM"]
-		# self.station_data = stations["107.5 Dark Star"]
-
 		station = RadioStation(self.station_data, output_directory=self.data_dir)
 		self.radio = TextualRadio(station=station, player=self.player)
 		self.radio.notification_urgency = Config("config.toml").get_notification_urgency()
 
 		self.load_station(station, force_jingle=True)
+		self.setup_media_control()
+		# log_widget = self._main_screen.query_one("#log", SubtitleLog)
+		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
+		# log_widget.write_line("Ready")
+		self.play_music()
 
 	def get_track_metadata(self) -> TrackMetadata:
 		"""
