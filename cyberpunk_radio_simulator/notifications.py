@@ -28,18 +28,26 @@ Desktop notification support.
 
 # stdlib
 import sys
-from typing import NamedTuple, TypeVar
+from typing import NamedTuple, Protocol, TypeVar
 
 # 3rd party
 from domdf_python_tools.typing import PathLike
 from notify_rs import URGENCY_NORMAL, Notification, NotificationHandle
+from typing_extensions import Self
 
 __all__ = ["NotificationMessage", "NotificationSender"]
 
-if sys.platform == "win32":
-	_N = Notification
-else:
-	_N = TypeVar("_N", Notification, NotificationHandle, covariant=True)
+
+class NotificationLike(Protocol):
+
+	def summary(self: Self, summary: str) -> Self: ...
+
+	def body(self: Self, body: str) -> Self: ...
+
+	def icon(self: Self, icon: PathLike) -> Self: ...
+
+
+_N = TypeVar("_N", bound=NotificationLike)
 
 
 class NotificationMessage(NamedTuple):
@@ -91,10 +99,17 @@ class NotificationSender:
 		:param urgency:
 		"""
 
-		if cls.notification_handle and hasattr(cls, "update"):
-			message.update(cls.notification_handle).timeout(5000).urgency(urgency).update()
+		if cls.notification_handle:
+			notification = message.update(cls.notification_handle)
 		else:
-			cls.notification_handle = message.as_notification().timeout(5000).urgency(urgency).show()
+			notification = message.as_notification()
+
+		notification.timeout(5000).urgency(urgency)
+
+		if isinstance(notification, NotificationHandle):
+			cls.notification_handle = notification.update()
+		else:
+			cls.notification_handle = notification.show()
 
 	@classmethod
 	def send(cls, summary: str, body: str, icon_file: PathLike, urgency: int = URGENCY_NORMAL) -> None:
