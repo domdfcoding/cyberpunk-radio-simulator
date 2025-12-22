@@ -201,7 +201,7 @@ class RadioportApp(App):
 
 	BINDINGS = [
 			Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
-			Binding(key='q', action="quit", description="Quit the app"),
+			Binding(key='q', action="quit", description="Quit"),
 			Binding(key='p', action="play", description="▶ Play "),
 			Binding(key='m', action="mute", description="Mute"),
 			Binding(key='P', action="pause_next", description="Pause after current track"),
