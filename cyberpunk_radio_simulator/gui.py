@@ -193,6 +193,7 @@ class RadioportApp(App):
 	mute_state: MuteState
 	track_info: TrackInfo
 	_main_screen: MainScreen
+	media_control: MediaControl
 
 	CSS = """
 	Screen { align: center middle; }
@@ -436,12 +437,12 @@ class RadioportApp(App):
 		self.radio = TextualRadio(station=station, player=self.player)
 		self.radio.notification_urgency = Config("config.toml").get_notification_urgency()
 
-		self.load_station(station, force_jingle=True)
+		self.station = station
 		self.setup_media_control()
+		self.load_station(station, force_jingle=True)
 		# log_widget = self._main_screen.query_one("#log", SubtitleLog)
 		# log_widget.write_line(f"Station has DJ? {self.station.has_dj}")
 		# log_widget.write_line("Ready")
-		self.play_music()
 
 	def get_track_metadata(self) -> TrackMetadata:
 		"""
