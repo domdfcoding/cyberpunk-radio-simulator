@@ -28,9 +28,6 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 
 # stdlib
 import os
-import sys
-
-sys.ps1 = ">>>"  # Stops readline being imported and breaking Textual's resize signal
 
 # 3rd party
 import click
@@ -155,6 +152,12 @@ def gui(output_dir: str = "data") -> None:
 	# this package
 	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.gui import RadioportApp
+
+	# Ensure values from parent terminal (if any) do not get passed through, since they won't be updated but shutil.get_terminal_size() assumes they are correct.
+	if "COLUMNS" in os.environ:
+		del os.environ["COLUMNS"]
+	if "LINES" in os.environ:
+		del os.environ["LINES"]
 
 	config = Config("config.toml")
 
