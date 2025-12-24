@@ -108,6 +108,7 @@ class RadioStation(Directories):
 		Play 3-5 songs back to back.
 		"""
 
+		# TODO: weighting
 		remaining_song_count = random.randint(3, 5)
 		while remaining_song_count:
 			song: Track = self.track_list.pop()
