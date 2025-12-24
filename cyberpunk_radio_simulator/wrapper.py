@@ -41,6 +41,7 @@ import gi  # nodep
 from domdf_python_tools.paths import PathPlus
 
 # this package
+from cyberpunk_radio_simulator.cli import get_subprocess_arguments
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 gi.require_version("Gtk", "3.0")
@@ -81,22 +82,26 @@ class Terminal(Vte.Terminal):
 
 	def spawn_app(
 			self,
+			theme: str | None = None,
 			output_directory: str = "data",
 			callback: Callable[["Terminal", int, Any], None] | None = None,
 			) -> None:
 		"""
 		Launch the Textual app in the terminal.
 
+		:param theme: The Textual theme to use.
 		:param output_directory: Directory containing files extracted from the game.
 		:param callback: Function to call when the app has launched, which is passed the terminal, the child process id, and any errors.
 		"""
 
 		terminal_pty = self.get_pty()
 		fd = cast(Gio.Cancellable, Vte.Pty.get_fd(terminal_pty))
+		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
+
 		self.spawn_async(
 				Vte.PtyFlags.DEFAULT,
 				PathPlus(__file__).parent.parent.abspath().as_posix(),  # Working directory
-				[sys.executable, "-m", "cyberpunk_radio_simulator", "gui", "-o", output_directory],
+				arguments,
 				["PS1='Radioport'", f"CPRS_WRAPPER_PID={os.getpid()}"],
 				GLib.SpawnFlags.DO_NOT_REAP_CHILD,
 				None,
@@ -203,15 +208,16 @@ class Wrapper(Gtk.Window):
 			# TODO: this doesn't always bring it to the foreground, only wiggle the tray icon.
 			self.present()
 
-	def run(self, output_directory: str = "data") -> None:
+	def run(self, theme: str | None = None, output_directory: str = "data") -> None:
 		"""
 		Show the wrapper window and launch the Textual app.
 
+		:param theme: The Textual theme to use.
 		:param output_directory: Directory containing files extracted from the game.
 		"""
 
 		signal.signal(SIGRAISE, self.on_raise_signal)
-		self.terminal.spawn_app(output_directory=output_directory, callback=self.spawn_callback)
+		self.terminal.spawn_app(theme=theme, output_directory=output_directory, callback=self.spawn_callback)
 		self.connect("destroy", Gtk.main_quit)
 		self.show_all()
 		try:

@@ -35,11 +35,16 @@ from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
 from consolekit.input import choice
 from consolekit.options import flag_option, version_option
 from consolekit.versions import get_version_callback
-from natsort import natsorted
 
 # this package
 from cyberpunk_radio_simulator import __version__
-from cyberpunk_radio_simulator.data import stations
+from cyberpunk_radio_simulator.cli import (
+		get_stations,
+		get_subprocess_arguments,
+		output_dir_option,
+		station_option,
+		theme_option
+		)
 
 __all__ = ["extract", "gui", "main", "play", "web"]
 
@@ -58,7 +63,7 @@ def main() -> None:
 	"""
 
 
-@click.option("-o", "--output-dir", default="data", help="Path to write files to.")
+@output_dir_option(help_text="Path to write files to.")
 @click.option("-i", "--install-dir", default=None, help="Path to the Cyberpunk 2077 installation.")
 @flag_option("-v", "--verbose", help="Show individual tracks being processed.")
 @main.command()
@@ -82,17 +87,8 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 	extractor.extract_radio_tracks(verbose=verbose)
 
 
-station_choices = natsorted(stations.keys())
-
-
-@click.option(
-		"-s",
-		"--station",
-		"station_name",
-		help="The station to play.",
-		type=click.Choice(station_choices, case_sensitive=False)
-		)
-@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@station_option()
+@output_dir_option()
 @main.command()
 def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	"""
@@ -106,6 +102,7 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 
 	# this package
 	from cyberpunk_radio_simulator.config import Config
+	from cyberpunk_radio_simulator.data import stations
 	from cyberpunk_radio_simulator.simulator import Radio, RadioStation
 
 	config = Config("config.toml")
@@ -113,6 +110,7 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	# TODO: it played a song twice
 
 	if not station_name:
+		station_choices = get_stations()
 		station_name = station_choices[choice(station_choices, text="Select a station", start_index=1)]
 
 	station_data = stations[station_name]
@@ -140,9 +138,10 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 	radio.play()
 
 
-@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@theme_option()
+@output_dir_option()
 @main.command()
-def gui(output_dir: str = "data") -> None:
+def gui(theme: str | None = None, output_dir: str = "data") -> None:
 	"""
 	Launch the Radioport GUI.
 	"""
@@ -164,12 +163,17 @@ def gui(output_dir: str = "data") -> None:
 
 	app = RadioportApp()
 	app.data_dir = PathPlus(config.get_output_dir(output_dir))
+
+	if theme:
+		app.theme = theme
+
 	app.run()
 
 
-@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@theme_option()
+@output_dir_option()
 @main.command()
-def web(output_dir: str = "data") -> None:
+def web(theme: str | None = None, output_dir: str = "data") -> None:
 	"""
 	Launch the Radioport web UI.
 	"""
@@ -181,23 +185,15 @@ def web(output_dir: str = "data") -> None:
 	# 3rd party
 	from textual_serve.server import Server
 
-	server = Server(
-			' '.join([
-					shlex.quote(sys.executable),
-					"-m",
-					os.path.basename(os.path.dirname(__file__)),
-					"gui",
-					"-o",
-					output_dir
-					]),
-			title="Radioport"
-			)
+	arguments = [shlex.quote(sys.executable), *get_subprocess_arguments(theme, output_dir)]
+	server = Server(' '.join(arguments), title="Radioport")
 	server.serve(debug=True)
 
 
-@click.option("-o", "--output-dir", default="data", help="Path to the extracted game files.")
+@theme_option()
+@output_dir_option()
 @main.command()
-def wrapper(output_dir: str = "data") -> None:
+def wrapper(theme: str | None = None, output_dir: str = "data") -> None:
 	"""
 	Launch the Radioport wrapper window.
 	"""
@@ -206,7 +202,7 @@ def wrapper(output_dir: str = "data") -> None:
 	from cyberpunk_radio_simulator.wrapper import Wrapper
 
 	wrapper = Wrapper()
-	wrapper.run(output_dir)
+	wrapper.run(theme, output_dir)
 
 
 if __name__ == "__main__":
