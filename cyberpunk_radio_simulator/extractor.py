@@ -210,12 +210,14 @@ class Extractor(Directories):
 		wem_filename.write_bytes(contents)
 		transcode_file(wem_filename, mp3_filename)
 
-	def extract_advert_audio(self, verbose: bool = False) -> tuple[Graph, dict[int, list[EventData]]]:
+	def extract_advert_audio(self, verbose: bool = False) -> dict[str, tuple[Graph, dict[int, list[EventData]]]]:
 		"""
 		Extract audio for adverts.
 
 		:param verbose:
 		"""
+
+		advert_graphs: dict[str, tuple[Graph, dict[int, list[EventData]]]] = {}
 
 		with self.gamedata_archive_file.open("rb") as gamedata_fp:
 
@@ -235,16 +237,20 @@ class Extractor(Directories):
 					if not output_file.is_file():
 						self.concatenate_advert_audio_clips(events, ad_data, output_file)
 
-		return graph, audio_events
+				advert_graphs[ad_name] = (graph, audio_events)
 
-	def extract_dj_audio(self) -> tuple[Graph, dict[int, list[EventData]]]:
+		return advert_graphs
+
+	def extract_dj_audio(self) -> dict[str, tuple[Graph, dict[int, list[EventData]]]]:
 		"""
 		Extract audio for radio DJs.
 		"""
 
+		dj_graphs: dict[str, tuple[Graph, dict[int, list[EventData]]]] = {}
+
 		with self.gamedata_archive_file.open("rb") as gamedata_fp:
 
-			for dj_data in djs.values():
+			for dj_name, dj_data in djs.items():
 				print(dj_data)
 
 				file = self.gamedata_archive.file_list.find_filename(dj_scenes[dj_data.scene_file])
@@ -276,7 +282,9 @@ class Extractor(Directories):
 						output_data, indent=2
 						)
 
-		return graph, audio_events
+				dj_graphs[dj_name] = (graph, audio_events)
+
+		return dj_graphs
 
 	def extract_radio_tracks(self, verbose: bool = False) -> None:
 		"""
