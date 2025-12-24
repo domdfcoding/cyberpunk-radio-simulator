@@ -42,9 +42,11 @@ from winrt.windows.media.playback import MediaPlayer  # type: ignore[import-not-
 # this package
 from cyberpunk_radio_simulator.media_control.player import Player
 
-__all__ = ["MediaControlWin32"]
+__all__ = ["MediaControlWin32", "SIGRAISE"]
 
 logger: logging.Logger = logging.getLogger(__name__)
+
+SIGRAISE = 99
 
 
 class MediaControlWin32:

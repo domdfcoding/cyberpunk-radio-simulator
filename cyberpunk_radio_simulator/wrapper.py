@@ -40,6 +40,9 @@ from typing import TYPE_CHECKING, Any, cast
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
 
+# this package
+from cyberpunk_radio_simulator.media_control import SIGRAISE
+
 gi.require_version("Gtk", "3.0")
 
 if TYPE_CHECKING:
@@ -196,7 +199,8 @@ class Wrapper(Gtk.Window):
 		:param stack_frame:
 		"""
 
-		if signalnum == signal.SIGUSR1:
+		if signalnum == SIGRAISE:
+			# TODO: this doesn't always bring it to the foreground, only wiggle the tray icon.
 			self.present()
 
 	def run(self, output_directory: str = "data") -> None:
@@ -206,7 +210,7 @@ class Wrapper(Gtk.Window):
 		:param output_directory: Directory containing files extracted from the game.
 		"""
 
-		signal.signal(signal.SIGUSR1, self.on_raise_signal)
+		signal.signal(SIGRAISE, self.on_raise_signal)
 		self.terminal.spawn_app(output_directory=output_directory, callback=self.spawn_callback)
 		self.connect("destroy", Gtk.main_quit)
 		self.show_all()

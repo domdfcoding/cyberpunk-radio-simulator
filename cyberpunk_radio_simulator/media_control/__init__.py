@@ -30,11 +30,13 @@ Desktop media control integration.
 # stdlib
 import sys
 
-__all__ = ["MediaControl"]
+__all__ = ["MediaControl", "SIGRAISE"]
 
 if sys.platform == "win32":
 	# this package
+	from .smtc import SIGRAISE
 	from .smtc import MediaControlWin32 as MediaControl
 else:
 	# this package
+	from .mpris import SIGRAISE
 	from .mpris import MediaControlMpris as MediaControl

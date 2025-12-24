@@ -55,14 +55,9 @@ if TYPE_CHECKING:
 	x = int
 	u = int
 
-__all__ = [
-		"DBusAdapter",
-		"MPRISInterface",
-		"MPRISPlayerInterface",
-		"MPRISPlaylistsInterface",
-		"Player",
-		"TrackMetadata",
-		]
+__all__ = ["DBusAdapter", "MPRISInterface", "MPRISPlayerInterface", "MPRISPlaylistsInterface", "SIGRAISE"]
+
+SIGRAISE = signal.SIGUSR1  # type: ignore[attr-defined,unused-ignore]
 
 
 class MPRISInterface(ServiceInterface):
@@ -90,7 +85,7 @@ class MPRISInterface(ServiceInterface):
 		except ValueError:
 			pass
 		if wrapper_ppid:
-			os.kill(wrapper_ppid, signal.SIGUSR1)
+			os.kill(wrapper_ppid, SIGRAISE)
 
 	@method()
 	def Quit(self) -> None:
