@@ -32,6 +32,7 @@ known_third_party = [
     "consolekit",
     "cp2077_extractor",
     "cyberpunk_radio_extractor",
+    "dbus_next",
     "dom_toml",
     "domdf_python_tools",
     "just_playback",
@@ -43,6 +44,11 @@ known_third_party = [
     "playsound3",
     "textual",
     "textual_serve",
+    "typing_extensions",
+    "winrt_windows_media",
+    "winrt_windows_media_core",
+    "winrt_windows_media_playback",
+    "winrt_windows_ui_notifications",
 ]
 known_first_party = [ "cyberpunk_radio_simulator",]
 
