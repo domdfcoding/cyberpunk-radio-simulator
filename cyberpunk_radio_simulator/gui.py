@@ -212,7 +212,6 @@ class RadioportApp(App):
 			Binding(key='.', action="next", description="Next Station", show=False),
 			]
 
-
 	def on_mount(self) -> None:  # noqa: D102
 		self.title = "Radioport"
 

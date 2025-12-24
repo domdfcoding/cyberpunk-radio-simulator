@@ -226,7 +226,7 @@ class RadioStation(Directories):
 
 			# Weight it against the one that last happened
 			break_options[self._last_non_tune_action] = 0.25
-			option = random.choices(list(break_options), weights=list(break_options.values()), k=1)[0]
+			option: type[Event] = random.choices(list(break_options), weights=list(break_options.values()), k=1)[0]
 			self._last_non_tune_action = option
 
 			if option is Link:
