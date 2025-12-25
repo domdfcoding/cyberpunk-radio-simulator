@@ -43,6 +43,7 @@ known_third_party = [
     "pillow",
     "playsound3",
     "textual",
+    "textual_image",
     "textual_serve",
     "typing_extensions",
     "winrt_windows_media",

@@ -329,7 +329,8 @@ class RadioportApp(App):
 		station_selector.highlighted = station_names.index(self.station_data.name)
 
 		logo_label_widget = self._main_screen.query_one("#station-logo", StationLogo)
-		logo_label_widget.img = apply_colour(get_logo_tight(self.station_data.name, self.station.output_directory))
+		logo = apply_colour(get_logo_tight(self.station_data.name, self.station.output_directory))
+		logo_label_widget.image = logo  # type: ignore[attr-defined]
 
 		# Reset paused indicator
 		self._main_screen.query_one("#track-progress", TrackProgress).paused = False

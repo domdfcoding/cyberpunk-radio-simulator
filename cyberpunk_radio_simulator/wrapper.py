@@ -66,6 +66,8 @@ class Terminal(Vte.Terminal):
 	Terminal for displaying a Textual app.
 	"""
 
+	can_use_sixel: bool = False
+
 	@classmethod
 	def new(cls) -> "Terminal":
 		"""
@@ -78,6 +80,11 @@ class Terminal(Vte.Terminal):
 		self.set_audible_bell(False)
 		self.set_pty(self.pty_new_sync(Vte.PtyFlags.DEFAULT, None))
 		self.set_word_char_exceptions("-,./?%&#:_")
+
+		if hasattr(self, "set_enable_sixel"):
+			self.set_enable_sixel(True)
+			self.can_use_sixel = True
+
 		return self
 
 	def spawn_app(
@@ -98,11 +105,15 @@ class Terminal(Vte.Terminal):
 		fd = cast(Gio.Cancellable, Vte.Pty.get_fd(terminal_pty))
 		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
 
+		env = ["PS1='Radioport'", f"CPRS_WRAPPER_PID={os.getpid()}"]
+		if self.can_use_sixel:
+			env.append("CPRS_SIXEL=1")
+
 		self.spawn_async(
 				Vte.PtyFlags.DEFAULT,
 				PathPlus(__file__).parent.parent.abspath().as_posix(),  # Working directory
 				arguments,
-				["PS1='Radioport'", f"CPRS_WRAPPER_PID={os.getpid()}"],
+				env,
 				GLib.SpawnFlags.DO_NOT_REAP_CHILD,
 				None,
 				-1,
