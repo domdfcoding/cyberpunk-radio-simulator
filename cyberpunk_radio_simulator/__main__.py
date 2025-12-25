@@ -32,19 +32,12 @@ import os
 # 3rd party
 import click
 from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
-from consolekit.input import choice
 from consolekit.options import flag_option, version_option
 from consolekit.versions import get_version_callback
 
 # this package
 from cyberpunk_radio_simulator import __version__
-from cyberpunk_radio_simulator.cli import (
-		get_stations,
-		get_subprocess_arguments,
-		output_dir_option,
-		station_option,
-		theme_option
-		)
+from cyberpunk_radio_simulator.cli import get_subprocess_arguments, output_dir_option, station_option, theme_option
 
 __all__ = ["extract", "gui", "main", "play", "web"]
 
@@ -90,7 +83,7 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 @station_option()
 @output_dir_option()
 @main.command()
-def play(station_name: str | None = None, output_dir: str = "data") -> None:
+def play(station_name: str, output_dir: str = "data") -> None:
 	"""
 	Play radio station in the terminal.
 	"""
@@ -109,14 +102,7 @@ def play(station_name: str | None = None, output_dir: str = "data") -> None:
 
 	# TODO: it played a song twice
 
-	if not station_name:
-		station_choices = get_stations()
-		station_name = station_choices[choice(station_choices, text="Select a station", start_index=1)]
-
 	station_data = stations[station_name]
-	# station_data = stations["98.7 Body Heat Radio"]
-	# station_data = stations["89.7 Growl FM"]
-	# station_data = stations["107.5 Dark Star"]
 
 	print("Tuning to", station_name)
 
