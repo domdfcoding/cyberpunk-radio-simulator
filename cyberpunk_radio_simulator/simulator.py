@@ -90,7 +90,7 @@ class RadioStation(Directories):
 			self.subtitles = {}
 			self.audio_events = {}
 			link_list = []
-			jingle_list = radio_jingle_ids[station.name]
+			jingle_list = radio_jingle_ids.get(station.name, ())
 
 		self.link_list = InfiniteList(list(link_list))
 		self.jingle_list = InfiniteList(list(jingle_list))
@@ -199,6 +199,10 @@ class RadioStation(Directories):
 
 		# Unless forced, either start with a jingle or part way through the song (1:2)
 		start_with_jingle = force_jingle or not random.getrandbits(2)
+		if not self.station.has_jingles:
+			# Either way we can't do it if there are no jingles.
+			start_with_jingle = False
+
 		if start_with_jingle:
 			yield from self.get_jingle()
 			yield from self.get_tunes()
@@ -218,11 +222,13 @@ class RadioStation(Directories):
 
 		# Now loop, playing a link/jingle/ad break, and then music
 		while True:
-			break_options: dict[type[Event], float] = {Jingle: 1.0}
+			break_options: dict[type[Event], float] = {}
 			if self.has_dj:
 				break_options[Link] = 2.0
 			if self.station.has_ads:
 				break_options[AdBreak] = 1.0
+			if self.station.has_jingles:
+				break_options[Jingle] = 1.0
 
 			# Weight it against the one that last happened
 			break_options[self._last_non_tune_action] = 0.25
