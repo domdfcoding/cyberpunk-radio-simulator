@@ -32,8 +32,8 @@ import os
 # 3rd party
 import click
 from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
-from consolekit.options import flag_option, version_option
-from consolekit.versions import get_version_callback
+from consolekit.options import flag_option
+from consolekit.versions import version_callback_option
 
 # this package
 from cyberpunk_radio_simulator import __version__
@@ -42,12 +42,10 @@ from cyberpunk_radio_simulator.cli import get_subprocess_arguments, output_dir_o
 __all__ = ["extract", "gui", "main", "play", "web"]
 
 
-@version_option(
-		get_version_callback(
-				__version__,
-				"cyberpunk-song-extractor",
-				dependencies=("click", "cp2077-extractor"),
-				)
+@version_callback_option(
+		__version__,
+		"cyberpunk-song-extractor",
+		dependencies=("click", "cp2077-extractor"),
 		)
 @click_group(cls=SuggestionGroup, invoke_without_command=False, context_settings=CONTEXT_SETTINGS)
 def main() -> None:
