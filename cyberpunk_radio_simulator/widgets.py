@@ -158,16 +158,8 @@ class TrackProgressLabel(Label):
 		else:
 			self.audio_bar_idx += 1
 			self.audio_bar_idx %= len(audio_bars)
-
-			elements.append(
-					''.join([
-							audio_bars[self.audio_bar_idx - (bar_step * 4)],
-							audio_bars[self.audio_bar_idx - (bar_step * 3)],
-							audio_bars[self.audio_bar_idx - (bar_step * 2)],
-							audio_bars[self.audio_bar_idx - bar_step],
-							audio_bars[self.audio_bar_idx],
-							])
-					)
+			bars = [audio_bars[self.audio_bar_idx - (bar_step * mult)] for mult in range(4, -1, -1)]
+			elements.append(''.join(bars))
 
 		elements.append(f"{pos_td} / {dur_td}")
 

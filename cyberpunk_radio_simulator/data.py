@@ -55,7 +55,7 @@ class StationData(NamedTuple):
 
 
 # Has to be this way otherwise the linters and formats fight eachother.
-djs = {}
+djs: dict[str, DJData] = {}
 djs["Ash"] = DJData(
 		scene_file=r"radio_growl",
 		station_name="89.7 Growl FM",
@@ -65,7 +65,7 @@ djs["Max Mike"] = DJData(
 		scene_file=r"radio_01_conspiracy",
 		station_name="107.3 Morro Rock Radio",
 		audio_filename_prefix="radio_max_mike_radio_ad_00_test",
-		general_audio=True
+		general_audio=True,
 		)
 djs["Stanley"] = DJData(
 		scene_file=r"radio_00_news",

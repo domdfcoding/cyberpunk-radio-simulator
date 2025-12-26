@@ -132,7 +132,10 @@ def theme_option() -> Callable[[_C], _C]:
 	"""
 
 	return click.option(
-			"-t", "--theme", help="The theme to use.", type=LazyChoice(get_textual_themes, case_sensitive=False)
+			"-t",
+			"--theme",
+			help="The theme to use.",
+			type=LazyChoice(get_textual_themes, case_sensitive=False),
 			)
 
 

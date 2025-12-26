@@ -87,6 +87,14 @@ def apply_colour(
 		background_colour: str = "#0e0204",
 		graphic_colour: str = "#77ffff",
 		) -> Image.Image:
+	"""
+	Apply the given foreground and graphic colours to the logo.
+
+	:param img:
+	:param background_colour:
+	:param graphic_colour:
+	"""
+
 	background: Image.Image = Image.new("RGBA", img.size, background_colour)
 	foreground: Image.Image = Image.new("RGBA", img.size, graphic_colour)
 	return Image.composite(foreground, background, img)
@@ -106,7 +114,9 @@ def draw_bar(
 	:param xpos: The X position of the centre of the bar (bar width is 60 pixels).
 	:param bar_height: The height of the bar (the bar starts 100 pixels from the bottom of the image).
 	:param image_height: The height of the image.
+	:param colour:
 	"""
+
 	draw.line(
 			[(xpos, image_height - 100), (xpos, image_height - 100 - bar_height)],
 			width=60,
@@ -144,7 +154,7 @@ def get_app_icon(install_dir: PathLike) -> Image.Image:
 				album_art.image_size[0] // 5 * x_pos_mult,
 				height,
 				album_art.image_size[1],
-				album_art_helper.graphic_colour
+				album_art_helper.graphic_colour,
 				)
 
 	logo_img = album_art_helper.expand_to_output_size(logo_img)

@@ -287,9 +287,8 @@ class Extractor(Directories):
 						"audio_events": audio_events,
 						"subtitles": subtitles,
 						}
-				self.dj_data_directory.joinpath(dj_data.audio_filename_prefix + "_data.json").dump_json(
-						output_data, indent=2
-						)
+				dj_data_file = self.dj_data_directory.joinpath(dj_data.audio_filename_prefix + "_data.json")
+				dj_data_file.dump_json(output_data, indent=2)
 
 				dj_graphs[dj_name] = (graph, audio_events)
 

@@ -209,7 +209,10 @@ class RadioStation(Directories):
 		else:
 			# Pick random start point (as percentage of track)
 			start_points = [
-					0, random.randint(30 - 5, 30 + 5), random.randint(60 - 5, 60 + 6), random.randint(90 - 5, 90)
+					0,
+					random.randint(30 - 5, 30 + 5),
+					random.randint(60 - 5, 60 + 6),
+					random.randint(90 - 5, 90),
 					]
 			start_percentage = random.choice(start_points)
 			if start_percentage:
