@@ -30,10 +30,12 @@ Functions for displaying radio station logos.
 from typing import cast
 
 # 3rd party
+from cyberpunk_radio_extractor import album_art
 from domdf_python_tools.paths import PathPlus
-from PIL import Image
+from domdf_python_tools.typing import PathLike
+from PIL import Image, ImageDraw
 
-__all__ = ["get_logo_tight", "logo_to_rich"]
+__all__ = ["apply_colour", "draw_bar", "get_app_icon", "get_logo_tight", "logo_to_rich"]
 
 
 def logo_to_rich(img: Image.Image, dest_width: int) -> str:
@@ -88,3 +90,63 @@ def apply_colour(
 	background: Image.Image = Image.new("RGBA", img.size, background_colour)
 	foreground: Image.Image = Image.new("RGBA", img.size, graphic_colour)
 	return Image.composite(foreground, background, img)
+
+
+def draw_bar(
+		draw: ImageDraw.ImageDraw,
+		xpos: int,
+		bar_height: int,
+		image_height: int,
+		colour: str,
+		) -> None:
+	"""
+	Draw a vertical bar on the image, such as for a spectrum analyser.
+
+	:param draw: :class:`PIL.ImageDraw.ImageDraw` for the image to draw on.
+	:param xpos: The X position of the centre of the bar (bar width is 60 pixels).
+	:param bar_height: The height of the bar (the bar starts 100 pixels from the bottom of the image).
+	:param image_height: The height of the image.
+	"""
+	draw.line(
+			[(xpos, image_height - 100), (xpos, image_height - 100 - bar_height)],
+			width=60,
+			fill=colour,
+			)
+
+
+def get_app_icon(install_dir: PathLike) -> Image.Image:
+	"""
+	Returns the app's logo.
+
+	Adapted from the album art graphics, with the bars from the in-game radioport button.
+
+	:param install_dir: Path to the Cyberpunk 2077 installation.
+	"""
+
+	aa = album_art.AlbumArt(install_dir)
+
+	with open(aa.archive_4_file, "rb") as fp:
+		logo_img = album_art.get_cyberpunk_logo(aa.archive_4, fp, logo_filename="cp77_logo_yellow.xbm")
+
+	with open(aa.archive_1_file, "rb") as fp:
+		bottom_left_text_img = album_art.get_bottom_left_text(aa.archive_1, fp)
+
+	album_art_helper = album_art.AlbumArtHelper(
+			logo_atlas=logo_img,
+			bottom_left_text_img=bottom_left_text_img,
+			)
+
+	# Add the Radioport icon bars
+	draw = ImageDraw.Draw(album_art_helper.background)
+	for x_pos_mult, height in [(1, 260), (2, 300), (3, 240), (4, 80)]:
+		draw_bar(
+				draw,
+				album_art.image_size[0] // 5 * x_pos_mult,
+				height,
+				album_art.image_size[1],
+				album_art_helper.graphic_colour
+				)
+
+	logo_img = album_art_helper.expand_to_output_size(logo_img)
+	logo_img = Image.composite(logo_img, album_art_helper.background, logo_img)
+	return Image.composite(album_art_helper.album_art_base, logo_img, album_art_helper.album_art_base_mask)

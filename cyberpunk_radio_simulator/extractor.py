@@ -44,7 +44,7 @@ from cp2077_extractor.radio_dj import (
 from cp2077_extractor.redarchive_reader import REDArchive
 from cp2077_extractor.utils import transcode_file
 from cyberpunk_radio_extractor import extract_radio_songs
-from cyberpunk_radio_extractor.album_art import get_album_art, get_station_logos
+from cyberpunk_radio_extractor.album_art import AlbumArt
 from domdf_python_tools.paths import PathPlus, TemporaryPathPlus
 from domdf_python_tools.typing import PathLike
 from moviepy.audio.AudioClip import CompositeAudioClip, concatenate_audioclips  # type: ignore[import-untyped]
@@ -53,6 +53,7 @@ from networkx import Graph
 
 # this package
 from cyberpunk_radio_simulator.data import advert_scenes, dj_scenes, djs
+from cyberpunk_radio_simulator.logos import get_app_icon
 
 __all__ = ["Extractor"]
 
@@ -80,9 +81,9 @@ class Directories:
 
 	def prepare_directories(self, create_missing: bool = False) -> None:
 		"""
-		Create output directories.
+		Set attributes for directory structure.
 
-		:param create_missing:
+		:param create_missing: Create missing dirrectories.
 		"""
 
 		self.audio_output_directory = self.output_directory / "audio"
@@ -94,6 +95,7 @@ class Directories:
 		self.stations_audio_directory = self.audio_output_directory / "stations"
 
 		self.station_logos_directory = self.artwork_directory / "stations"
+		self.album_art_directory = self.artwork_directory / "album_art"
 
 		if create_missing:
 			self.output_directory.maybe_make()
@@ -105,6 +107,7 @@ class Directories:
 			self.stations_audio_directory.maybe_make(parents=True)
 			self.dj_data_directory.maybe_make(parents=True)
 			self.station_logos_directory.maybe_make(parents=True)
+			self.album_art_directory.maybe_make(parents=True)
 
 
 class Extractor(Directories):
@@ -127,8 +130,14 @@ class Extractor(Directories):
 	lang_en_voice_archive: REDArchive
 	audio_general_archive: REDArchive
 
+	aa: AlbumArt
+
 	def __init__(self, install_directory: PathLike, output_directory: PathLike = "data"):
-		super().__init__(output_directory)
+		self.output_directory = PathPlus(output_directory)
+
+		self.prepare_directories(True)
+
+		self.aa = AlbumArt(install_dir=install_directory)
 
 		self.install_directory = PathPlus(install_directory)
 
@@ -293,7 +302,7 @@ class Extractor(Directories):
 		:param verbose: Show individual tracks being processed.
 		"""
 
-		album_art_data = get_album_art(self.install_directory)
+		album_art_data = self.aa.get_album_art()
 
 		extract_radio_songs(
 				self.install_directory,
@@ -308,7 +317,25 @@ class Extractor(Directories):
 		Extract the logos for the radio stations.
 		"""
 
-		station_logos = get_station_logos(self.install_directory)
+		station_logos = self.aa.get_station_logos()
 
 		for station_name, logo_png_bytes in station_logos.items():
 			self.station_logos_directory.joinpath(f"{station_name}.png").write_bytes(logo_png_bytes)
+
+	def extract_album_art(self) -> None:
+		"""
+		Extract album art for the radio stations.
+		"""
+
+		album_art_data = self.aa.get_album_art()
+
+		for station_name, art_png_bytes in album_art_data.items():
+			self.album_art_directory.joinpath(f"{station_name}.png").write_bytes(art_png_bytes)
+
+	def extract_app_icon(self) -> None:
+		"""
+		Create the app icon.
+		"""
+
+		app_icon = get_app_icon(self.install_directory)
+		app_icon.save(self.artwork_directory / "app_icon.png")

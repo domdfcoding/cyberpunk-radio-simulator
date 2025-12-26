@@ -73,7 +73,8 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 	extractor = Extractor(config.get_install_dir(install_dir), config.get_output_dir(output_dir))
 
 	# From quickest to slowest
-	# TODO: get album artwork as images too, for notifications (better for light backgrounds)
+	extractor.extract_app_icon()
+	extractor.extract_album_art()
 	extractor.extract_station_logos()
 	extractor.extract_advert_audio()
 	extractor.extract_dj_audio()

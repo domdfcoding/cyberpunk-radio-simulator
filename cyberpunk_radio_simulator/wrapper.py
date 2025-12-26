@@ -171,6 +171,7 @@ class Wrapper(Gtk.Window):
 
 		self.set_default_size(width, height)
 		self.set_border_width(0)
+		self.set_icon_from_file("data/artwork/app_icon.png")
 
 	def spawn_callback(self, terminal: Vte.Terminal, pid: int, error: Any | None) -> None:
 		"""
