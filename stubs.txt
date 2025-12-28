@@ -1,2 +1,2 @@
 types-networkx
-pygobject-stubs
+git+https://github.com/domdfcoding/pygobject-stubs.git@libunity --config-settings=config=Gtk3,Gdk3,Soup2

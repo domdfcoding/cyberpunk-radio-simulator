@@ -34,7 +34,7 @@ import os
 import signal
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 # 3rd party
 import gi  # nodep
@@ -45,18 +45,12 @@ from cyberpunk_radio_simulator.cli import get_subprocess_arguments
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 gi.require_version("Gtk", "3.0")
-
-if TYPE_CHECKING:
-	# 3rd party
-	from gi.repository import _Gtk3 as Gtk
-else:
-	# 3rd party
-	from gi.repository import Gtk
-
 gi.require_version("Vte", "2.91")  # vte-0.38 (gnome-3.14)
+gi.require_version("Unity", "7.0")
+gi.require_version("Dbusmenu", "0.4")
 
 # 3rd party
-from gi.repository import Gdk, Gio, GLib, Vte  # nodep  # noqa: E402
+from gi.repository import Dbusmenu, Gdk, Gio, GLib, Gtk, Unity, Vte  # nodep  # noqa: E402
 
 __all__ = ["MainWindow", "Terminal", "Wrapper"]
 
@@ -175,6 +169,7 @@ class Wrapper(Gtk.Window):
 		self.set_default_size(width, height)
 		self.set_border_width(0)
 		self.set_icon_from_file("data/artwork/app_icon.png")
+		self.set_wmclass("radioport", "Radioport")
 
 	def spawn_callback(self, terminal: Vte.Terminal, pid: int, error: Any | None) -> None:
 		"""
@@ -194,6 +189,35 @@ class Wrapper(Gtk.Window):
 
 		terminal.watch_child(pid)
 		terminal.connect("child_exited", self.on_child_exited)
+
+	def on_launcher_menuitem_clicked(self, item: Dbusmenu.Menuitem, timestamp: int) -> None:
+		"""
+		Handler for a Unity Launcher rightclick menu item being clicked.
+
+		:param item: The clicked item.
+		:param timestamp:
+		"""
+
+		print("Clicked", item, timestamp)
+
+	def create_launcher_options(self) -> None:
+		"""
+		Create the Unity launcher rightclick menu options.
+		"""
+
+		# TODO: gate on desktop file existing and us launching in way to use it (no spaces in install path)
+		launcher = Unity.LauncherEntry.get_for_desktop_id("radioport.desktop")
+
+		ql = Dbusmenu.Menuitem.new()
+
+		for action in ["Play", "Pause", "Next Station", "Previous Station"]:
+			menuitem = Dbusmenu.Menuitem.new()
+			menuitem.property_set(Dbusmenu.MENUITEM_PROP_LABEL, action)
+			menuitem.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
+			menuitem.connect(Dbusmenu.MENUITEM_SIGNAL_ITEM_ACTIVATED, self.on_launcher_menuitem_clicked)
+			ql.child_append(menuitem)
+
+		launcher.set_property("quicklist", ql)
 
 	def on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
 		"""
@@ -235,6 +259,8 @@ class Wrapper(Gtk.Window):
 		self.terminal.spawn_app(theme=theme, output_directory=output_directory, callback=self.spawn_callback)
 		self.connect("destroy", Gtk.main_quit)
 		self.show_all()
+		self.create_launcher_options()
+
 		try:
 			Gtk.main()
 		except KeyboardInterrupt:
