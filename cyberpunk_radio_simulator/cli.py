@@ -32,7 +32,7 @@ from typing import TypeVar
 
 # 3rd party
 import click
-from consolekit.input import choice
+from consolekit.options import ChoiceOption
 from natsort import natsorted
 
 __all__ = [
@@ -163,63 +163,3 @@ def get_subprocess_arguments(theme: str | None = None, output_directory: str = "
 		arguments.extend(["--theme", theme])
 
 	return arguments
-
-
-class ChoiceOption(click.Option):
-	"""
-	:class:`click.Option` subclass for a string choice.
-
-	If a value is not provided a prompt (where the user chooses the corresponding number) is shown.
-
-	:param param_decls: The parameter declarations for this option.
-	:param type: The type that should be used.
-	:param show_default: Show the default value for this option in its help text.
-		Values are not shown by default, unless :attr:`Context.show_default` is :py:obj:`True`.
-		If this value is a string, it shows that string in parentheses instead of the actual value.
-		This is particularly useful for dynamic options.
-		For single option boolean flags, the default remains hidden if its value is :py:obj:`False`.
-	:param prompt: The prompt text. Defaults to the option name (capitalised and with spaces) if unset.
-	:param help: The help text.
-	:param hidden: Hide this option from help outputs.
-	:param show_choices:
-	:param deprecated: If :py:obj:`True` or a non-empty string, issues a message indicating that the argument is deprecated
-		and highlights its deprecation in --help.
-		The message can be customized by using a string as the value.
-		A deprecated parameter cannot be required, a ValueError will be raised otherwise.
-	"""
-
-	type: click.Choice[str]
-	prompt: str
-
-	def __init__(
-			self,
-			param_decls: Sequence[str],
-			type: click.Choice[str],  # noqa: A002  # pylint: disable=redefined-builtin
-			show_default: bool | str | None = None,
-			prompt: str = '',
-			help: str | None = None,  # noqa: A002  # pylint: disable=redefined-builtin
-			hidden: bool = False,
-			show_choices: bool = True,
-			deprecated: bool | str = False,
-			) -> None:
-
-		super().__init__(
-				param_decls=param_decls,
-				show_default=show_default,
-				prompt=prompt or True,
-				help=help,
-				hidden=hidden,
-				show_choices=show_choices,
-				deprecated=deprecated,
-				type=type,
-				default=None,
-				)
-
-	def prompt_for_value(self, ctx: click.Context) -> str:
-		"""
-		Show the prompt if a value was not provided.
-
-		:param ctx:
-		"""
-		choices = list(self.type.choices)
-		return choices[choice(choices, text=self.prompt, start_index=1)]
