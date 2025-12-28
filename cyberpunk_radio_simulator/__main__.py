@@ -26,9 +26,6 @@ Play Cyberpunk 2077 radios in your terminal, with jingles, DJs and adverts.
 #  OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# stdlib
-import os
-
 # 3rd party
 import click
 from consolekit import CONTEXT_SETTINGS, SuggestionGroup, click_group
@@ -137,12 +134,6 @@ def gui(theme: str | None = None, output_dir: str = "data") -> None:
 	# this package
 	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.gui import RadioportApp
-
-	# Ensure values from parent terminal (if any) do not get passed through, since they won't be updated but shutil.get_terminal_size() assumes they are correct.
-	if "COLUMNS" in os.environ:
-		del os.environ["COLUMNS"]
-	if "LINES" in os.environ:
-		del os.environ["LINES"]
 
 	config = Config("config.toml")
 

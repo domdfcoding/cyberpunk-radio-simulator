@@ -109,6 +109,9 @@ class Terminal(Vte.Terminal):
 		if self.can_use_sixel:
 			env.append("CPRS_SIXEL=1")
 
+		# Ensures they are ignored if set by the terminal we're invoked from
+		env.extend(("COLUMNS=-1", "LINES=-1"))
+
 		self.spawn_async(
 				Vte.PtyFlags.DEFAULT,
 				PathPlus(__file__).parent.parent.abspath().as_posix(),  # Working directory
