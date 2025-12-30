@@ -156,7 +156,12 @@ class Wrapper(Gtk.Window):
 		self.terminal.set_color_background(Gdk.RGBA(0.071, 0.071, 0.071, 1.0))
 		# Matches background colour of default textual theme.
 
-		self.add(MainWindow().add_widget(cast(Gtk.Widget, self.terminal)))
+		menubar = self.create_menu_options()
+
+		box = Gtk.HBox()
+		self.add(box)
+		box.pack_start(menubar, False, True, 0)
+		box.add(MainWindow().add_widget(cast(Gtk.Widget, self.terminal)))
 
 		char_width, char_height = self.terminal.get_char_width(), self.terminal.get_char_height()
 		width, height = 805, 600
@@ -170,6 +175,15 @@ class Wrapper(Gtk.Window):
 		self.set_border_width(0)
 		self.set_icon_from_file("data/artwork/app_icon.png")
 		self.set_wmclass("radioport", "Radioport")
+
+	def on_menu_command_palette_clicked(self, item: Gtk.MenuItem) -> None:
+		"""
+		Handler for the ``File`` -> ``Command Palette`` button being clicked.
+
+		:param item:
+		"""
+
+		self.terminal.feed_child(b"\x10")  # Ctrl+p
 
 	def spawn_callback(self, terminal: Vte.Terminal, pid: int, error: Any | None) -> None:
 		"""
@@ -198,7 +212,35 @@ class Wrapper(Gtk.Window):
 		:param timestamp:
 		"""
 
-		print("Clicked", item, timestamp)
+		action = item.property_get(Dbusmenu.MENUITEM_PROP_LABEL)
+		print("Clicked", action, timestamp)
+
+		if action == "Play/Pause":
+			self.terminal.feed_child(b"p")
+		elif action == "Mute":
+			self.terminal.feed_child(b"m")
+		elif action == "Next Station":
+			self.terminal.feed_child(b">")
+		elif action == "Previous Station":
+			self.terminal.feed_child(b"<")
+			# self.terminal.feed_child(b"\x10")  # Ctrl+p
+			# self.terminal.feed_child(b"\x1b[21~")  # F10
+
+	def create_menu_options(self) -> Gtk.MenuBar:
+		"""
+		Create the menubar options.
+		"""
+
+		menubar = Gtk.MenuBar()
+		menuitem = Gtk.MenuItem.new_with_mnemonic(label="_File")
+		submenu = Gtk.Menu()
+		submenuitem = Gtk.MenuItem.new_with_mnemonic(label="Command _Palette")
+		submenuitem.connect("activate", self.on_menu_command_palette_clicked)
+		submenu.append(submenuitem)
+		menuitem.set_submenu(submenu)
+		menubar.append(menuitem)
+
+		return menubar
 
 	def create_launcher_options(self) -> None:
 		"""
@@ -210,7 +252,7 @@ class Wrapper(Gtk.Window):
 
 		ql = Dbusmenu.Menuitem.new()
 
-		for action in ["Play", "Pause", "Next Station", "Previous Station"]:
+		for action in ["Play/Pause", "Mute", "Next Station", "Previous Station"]:
 			menuitem = Dbusmenu.Menuitem.new()
 			menuitem.property_set(Dbusmenu.MENUITEM_PROP_LABEL, action)
 			menuitem.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
