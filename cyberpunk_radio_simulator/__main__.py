@@ -36,7 +36,7 @@ from consolekit.versions import version_callback_option
 from cyberpunk_radio_simulator import __version__
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments, output_dir_option, station_option, theme_option
 
-__all__ = ["extract", "gui", "main", "play", "web"]
+__all__ = ["extract", "gui", "main", "play", "web", "wrapper"]
 
 
 @version_callback_option(

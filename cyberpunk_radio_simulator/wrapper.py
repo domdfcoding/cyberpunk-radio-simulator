@@ -5,7 +5,7 @@
 Standalone terminal wrapper for the app.
 
 .. extras-require:: wrapper
-    :pyproject:
+	:pyproject:
 """
 #
 #  Copyright © 2025 Dominic Davis-Foster <dominic@davis-foster.co.uk>
@@ -45,6 +45,7 @@ from cyberpunk_radio_simulator.cli import get_subprocess_arguments
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
 gi.require_version("Vte", "2.91")  # vte-0.38 (gnome-3.14)
 gi.require_version("Unity", "7.0")
 gi.require_version("Dbusmenu", "0.4")
@@ -99,7 +100,7 @@ class Terminal(Vte.Terminal):
 		fd = cast(Gio.Cancellable, Vte.Pty.get_fd(terminal_pty))
 		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
 
-		env = ["PS1='Radioport'", f"CPRS_WRAPPER_PID={os.getpid()}"]
+		env = [f"CPRS_WRAPPER_PID={os.getpid()}"]
 		if self.can_use_sixel:
 			env.append("CPRS_SIXEL=1")
 
@@ -165,11 +166,8 @@ class Wrapper(Gtk.Window):
 
 		char_width, char_height = self.terminal.get_char_width(), self.terminal.get_char_height()
 		width, height = 805, 600
-		# print(char_width, char_height)
-		# print(width, height)
 		width = (width // char_width) * char_width + 2
 		height = (height // char_height) * char_height + 2
-		# print(width, height)
 
 		self.set_default_size(width, height)
 		self.set_border_width(0)
