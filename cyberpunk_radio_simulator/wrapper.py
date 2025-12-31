@@ -37,6 +37,7 @@ from typing import Any, cast
 # 3rd party
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
+from textual_wrapper.wrapper import MenuOption
 from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow
 
 # this package
@@ -46,11 +47,9 @@ from cyberpunk_radio_simulator.media_control import SIGRAISE
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("Vte", "2.91")  # vte-0.38 (gnome-3.14)
-gi.require_version("Unity", "7.0")
-gi.require_version("Dbusmenu", "0.4")
 
 # 3rd party
-from gi.repository import Dbusmenu, Gdk, Gtk, Unity, Vte  # nodep  # noqa: E402
+from gi.repository import Gdk, Gtk, Vte  # nodep  # noqa: E402
 
 __all__ = ["Wrapper"]
 
@@ -70,7 +69,15 @@ class Wrapper(WrapperWindow):
 		self.terminal.set_color_background(Gdk.RGBA(0.071, 0.071, 0.071, 1.0))
 		# Matches background colour of default textual theme.
 
-		menubar = self.create_menu_options()
+		self.menu_options: dict[Gtk.MenuItem, bytes] = {}
+		menubar = self.create_menu_options({"_File": [MenuOption("Command _Palette", '\x10')]})
+
+		self.launcher_options: dict[str, bytes] = {
+				"Play/Pause": b"p",
+				"Mute": b"m",
+				"Next Station": b">",
+				"Previous Station": b"<",
+				}
 
 		box = Gtk.HBox()
 		self.add(box)
@@ -81,72 +88,6 @@ class Wrapper(WrapperWindow):
 		self.set_border_width(0)
 		self.set_icon_from_file("data/artwork/app_icon.png")
 		self.set_wmclass("radioport", "Radioport")
-
-	def on_menu_command_palette_clicked(self, item: Gtk.MenuItem) -> None:
-		"""
-		Handler for the ``File`` -> ``Command Palette`` button being clicked.
-
-		:param item:
-		"""
-
-		self.terminal.feed_child(b"\x10")  # Ctrl+p
-
-	def on_launcher_menuitem_clicked(self, item: Dbusmenu.Menuitem, timestamp: int) -> None:
-		"""
-		Handler for a Unity Launcher rightclick menu item being clicked.
-
-		:param item: The clicked item.
-		:param timestamp:
-		"""
-
-		action = item.property_get(Dbusmenu.MENUITEM_PROP_LABEL)
-		print("Clicked", action, timestamp)
-
-		if action == "Play/Pause":
-			self.terminal.feed_child(b"p")
-		elif action == "Mute":
-			self.terminal.feed_child(b"m")
-		elif action == "Next Station":
-			self.terminal.feed_child(b">")
-		elif action == "Previous Station":
-			self.terminal.feed_child(b"<")
-			# self.terminal.feed_child(b"\x10")  # Ctrl+p
-			# self.terminal.feed_child(b"\x1b[21~")  # F10
-
-	def create_menu_options(self) -> Gtk.MenuBar:
-		"""
-		Create the menubar options.
-		"""
-
-		menubar = Gtk.MenuBar()
-		menuitem = Gtk.MenuItem.new_with_mnemonic(label="_File")
-		submenu = Gtk.Menu()
-		submenuitem = Gtk.MenuItem.new_with_mnemonic(label="Command _Palette")
-		submenuitem.connect("activate", self.on_menu_command_palette_clicked)
-		submenu.append(submenuitem)
-		menuitem.set_submenu(submenu)
-		menubar.append(menuitem)
-
-		return menubar
-
-	def create_launcher_options(self) -> None:
-		"""
-		Create the Unity launcher rightclick menu options.
-		"""
-
-		# TODO: gate on desktop file existing and us launching in way to use it (no spaces in install path)
-		launcher = Unity.LauncherEntry.get_for_desktop_id("radioport.desktop")
-
-		ql = Dbusmenu.Menuitem.new()
-
-		for action in ["Play/Pause", "Mute", "Next Station", "Previous Station"]:
-			menuitem = Dbusmenu.Menuitem.new()
-			menuitem.property_set(Dbusmenu.MENUITEM_PROP_LABEL, action)
-			menuitem.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
-			menuitem.connect(Dbusmenu.MENUITEM_SIGNAL_ITEM_ACTIVATED, self.on_launcher_menuitem_clicked)
-			ql.child_append(menuitem)
-
-		launcher.set_property("quicklist", ql)
 
 	def on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
 		"""
