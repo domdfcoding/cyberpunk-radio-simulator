@@ -81,7 +81,7 @@ class MPRISInterface(ServiceInterface):
 
 		wrapper_ppid = None
 		try:
-			wrapper_ppid = int(os.getenv("CPRS_WRAPPER_PID", 0))
+			wrapper_ppid = int(os.getenv("TEXTUAL_WRAPPER_PID", 0))
 		except ValueError:
 			pass
 		if wrapper_ppid:

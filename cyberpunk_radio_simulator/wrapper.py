@@ -30,17 +30,14 @@ Standalone terminal wrapper for the app.
 #
 
 # stdlib
-import os
 import signal
 import sys
-from collections.abc import Callable
 from typing import Any, cast
 
 # 3rd party
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
-from textual_wrapper.wrapper.gtk import MainWindow
-from textual_wrapper.wrapper.gtk import Terminal as TerminalBase
+from textual_wrapper.wrapper.gtk import MainWindow, Terminal
 
 # this package
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments
@@ -53,52 +50,9 @@ gi.require_version("Unity", "7.0")
 gi.require_version("Dbusmenu", "0.4")
 
 # 3rd party
-from gi.repository import Dbusmenu, Gdk, Gio, GLib, Gtk, Unity, Vte  # nodep  # noqa: E402
+from gi.repository import Dbusmenu, Gdk, Gtk, Unity, Vte  # nodep  # noqa: E402
 
-__all__ = ["Terminal", "Wrapper"]
-
-
-class Terminal(TerminalBase):
-	"""
-	Terminal for displaying a Textual app.
-	"""
-
-	def spawn_app(
-			self,
-			theme: str | None = None,
-			output_directory: str = "data",
-			callback: Callable[["Terminal", int, Any], None] | None = None,
-			) -> None:
-		"""
-		Launch the Textual app in the terminal.
-
-		:param theme: The Textual theme to use.
-		:param output_directory: Directory containing files extracted from the game.
-		:param callback: Function to call when the app has launched, which is passed the terminal, the child process id, and any errors.
-		"""
-
-		terminal_pty = self.get_pty()
-		fd = cast(Gio.Cancellable, Vte.Pty.get_fd(terminal_pty))
-		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
-
-		env = [f"CPRS_WRAPPER_PID={os.getpid()}"]
-		if self.can_use_sixel:
-			env.append("CPRS_SIXEL=1")
-
-		# Ensures they are ignored if set by the terminal we're invoked from
-		env.extend(("COLUMNS=-1", "LINES=-1"))
-
-		self.spawn_async(
-				Vte.PtyFlags.DEFAULT,
-				PathPlus(__file__).parent.parent.abspath().as_posix(),  # Working directory
-				arguments,
-				env,
-				GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-				None,
-				-1,
-				fd,
-				callback=callback,
-				)
+__all__ = ["Wrapper"]
 
 
 class Wrapper(Gtk.Window):
@@ -255,7 +209,13 @@ class Wrapper(Gtk.Window):
 		"""
 
 		signal.signal(SIGRAISE, self.on_raise_signal)
-		self.terminal.spawn_app(theme=theme, output_directory=output_directory, callback=self.spawn_callback)
+		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
+		working_directory = PathPlus(__file__).parent.parent.abspath().as_posix()
+		self.terminal.spawn_app(
+				arguments=arguments,
+				working_directory=working_directory,
+				callback=self.spawn_callback,
+				)
 		self.connect("destroy", Gtk.main_quit)
 		self.show_all()
 		self.create_launcher_options()
