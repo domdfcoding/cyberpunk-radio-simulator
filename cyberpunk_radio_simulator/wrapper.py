@@ -39,6 +39,8 @@ from typing import Any, cast
 # 3rd party
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
+from textual_wrapper.wrapper.gtk import MainWindow
+from textual_wrapper.wrapper.gtk import Terminal as TerminalBase
 
 # this package
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments
@@ -53,34 +55,13 @@ gi.require_version("Dbusmenu", "0.4")
 # 3rd party
 from gi.repository import Dbusmenu, Gdk, Gio, GLib, Gtk, Unity, Vte  # nodep  # noqa: E402
 
-__all__ = ["MainWindow", "Terminal", "Wrapper"]
+__all__ = ["Terminal", "Wrapper"]
 
 
-class Terminal(Vte.Terminal):
+class Terminal(TerminalBase):
 	"""
 	Terminal for displaying a Textual app.
 	"""
-
-	can_use_sixel: bool = False
-
-	@classmethod
-	def new(cls) -> "Terminal":
-		"""
-		Create the terminal widget.
-		"""
-
-		self = Terminal()
-		self.set_mouse_autohide(True)
-		self.set_scroll_on_output(False)
-		self.set_audible_bell(False)
-		self.set_pty(self.pty_new_sync(Vte.PtyFlags.DEFAULT, None))
-		self.set_word_char_exceptions("-,./?%&#:_")
-
-		if hasattr(self, "set_enable_sixel"):
-			self.set_enable_sixel(True)
-			self.can_use_sixel = True
-
-		return self
 
 	def spawn_app(
 			self,
@@ -118,28 +99,6 @@ class Terminal(Vte.Terminal):
 				fd,
 				callback=callback,
 				)
-
-
-class MainWindow(Gtk.ScrolledWindow):
-	"""
-	The main window, containing the terminal widget.
-	"""
-
-	def __init__(self) -> None:
-		super().__init__()
-
-		self.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-		self.set_border_width(0)
-
-	def add_widget(self, widget: Gtk.Widget) -> "MainWindow":
-		"""
-		Add a widget to the window.
-
-		:param widget:
-		"""
-
-		Gtk.Container.add(self, widget)
-		return self
 
 
 class Wrapper(Gtk.Window):
