@@ -37,7 +37,7 @@ from typing import Any, cast
 # 3rd party
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
-from textual_wrapper.wrapper.gtk import MainWindow, Terminal
+from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow
 
 # this package
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments
@@ -55,7 +55,7 @@ from gi.repository import Dbusmenu, Gdk, Gtk, Unity, Vte  # nodep  # noqa: E402
 __all__ = ["Wrapper"]
 
 
-class Wrapper(Gtk.Window):
+class Wrapper(WrapperWindow):
 	"""
 	Standalone terminal wrapper for the app.
 
@@ -77,12 +77,7 @@ class Wrapper(Gtk.Window):
 		box.pack_start(menubar, False, True, 0)
 		box.add(MainWindow().add_widget(cast(Gtk.Widget, self.terminal)))
 
-		char_width, char_height = self.terminal.get_char_width(), self.terminal.get_char_height()
-		width, height = 805, 600
-		width = (width // char_width) * char_width + 2
-		height = (height // char_height) * char_height + 2
-
-		self.set_default_size(width, height)
+		self.set_window_size((805, 600))
 		self.set_border_width(0)
 		self.set_icon_from_file("data/artwork/app_icon.png")
 		self.set_wmclass("radioport", "Radioport")
@@ -95,25 +90,6 @@ class Wrapper(Gtk.Window):
 		"""
 
 		self.terminal.feed_child(b"\x10")  # Ctrl+p
-
-	def spawn_callback(self, terminal: Vte.Terminal, pid: int, error: Any | None) -> None:
-		"""
-		Handler for the app finishing spawning.
-
-		Sets up a watcher for the process later exiting.
-
-		:param terminal:
-		:param pid: Process ID of the Textual app.
-		:param error:
-		"""
-
-		if error:
-			print(f"{terminal=}")
-			print(f"{pid=}")
-			print(f"{error=}")
-
-		terminal.watch_child(pid)
-		terminal.connect("child_exited", self.on_child_exited)
 
 	def on_launcher_menuitem_clicked(self, item: Dbusmenu.Menuitem, timestamp: int) -> None:
 		"""
@@ -211,16 +187,4 @@ class Wrapper(Gtk.Window):
 		signal.signal(SIGRAISE, self.on_raise_signal)
 		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
 		working_directory = PathPlus(__file__).parent.parent.abspath().as_posix()
-		self.terminal.spawn_app(
-				arguments=arguments,
-				working_directory=working_directory,
-				callback=self.spawn_callback,
-				)
-		self.connect("destroy", Gtk.main_quit)
-		self.show_all()
-		self.create_launcher_options()
-
-		try:
-			Gtk.main()
-		except KeyboardInterrupt:
-			sys.exit()
+		super().run(arguments, working_directory)
