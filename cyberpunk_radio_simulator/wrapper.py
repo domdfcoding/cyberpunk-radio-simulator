@@ -37,8 +37,8 @@ from typing import Any, cast
 # 3rd party
 import gi  # nodep
 from domdf_python_tools.paths import PathPlus
-from textual_wrapper.wrapper import MenuOption
-from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow
+from textual_wrapper.wrapper import MenuOption  # nodep
+from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow  # nodep
 
 # this package
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments

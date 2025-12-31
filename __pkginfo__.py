@@ -2,4 +2,13 @@
 
 __all__ = ["extras_require"]
 
-extras_require = {"wrapper": ["pygobject==3.50.0"], "all": ["pygobject==3.50.0"]}
+extras_require = {
+		"wrapper": [
+				"pygobject==3.50.0",
+				"textual-wrapper[gtk]@ git+https://github.com/domdfcoding/textual-wrapper.git"
+				],
+		"all": [
+				"pygobject==3.50.0",
+				"textual-wrapper[gtk]@ git+https://github.com/domdfcoding/textual-wrapper.git"
+				]
+		}

@@ -26,8 +26,14 @@ Homepage = "https://github.com/domdfcoding/cyberpunk-radio-simulator"
 radioport = "cyberpunk_radio_simulator.__main__:main"
 
 [project.optional-dependencies]
-wrapper = [ "pygobject==3.50.0",]
-all = [ "pygobject==3.50.0",]
+wrapper = [
+    "pygobject==3.50.0",
+    "textual-wrapper[gtk]@ git+https://github.com/domdfcoding/textual-wrapper.git",
+]
+all = [
+    "pygobject==3.50.0",
+    "textual-wrapper[gtk]@ git+https://github.com/domdfcoding/textual-wrapper.git",
+]
 
 [tool.whey]
 base-classifiers = []
