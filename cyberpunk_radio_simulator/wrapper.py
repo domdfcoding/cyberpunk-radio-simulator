@@ -35,42 +35,53 @@ import sys
 from typing import TYPE_CHECKING, Any
 
 # 3rd party
-from textual_wrapper.types import MenuOption  # nodep
-from textual_wrapper.wrapper import Wrapper as WrapperCls  # nodep
-from textual_wrapper.wrapper.unity import WrapperWindow  # nodep
+from textual_wrapper.keycodes import CTRL_P  # nodep
+from textual_wrapper.types import MenuOption, Wrapper  # nodep
+from textual_wrapper.wrapper import gtk  # nodep
 
 # this package
+from cyberpunk_radio_simulator.cli import get_subprocess_arguments
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 if TYPE_CHECKING:
 	# 3rd party
 	from gi.repository import Vte  # nodep  # noqa: E402
 
-__all__ = ["Wrapper"]
+__all__ = ["WrapperWindow", "setup_wrapper"]
 
 
-class Wrapper(WrapperWindow):
+def setup_wrapper(theme: str | None = None, output_directory: str = "data") -> Wrapper:
+	"""
+	Creates the wrapper instance with menu and launcher options.
+
+	:param theme: The Textual theme to use.
+	:param output_directory: Directory containing files extracted from the game.
+	"""
+
+	arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
+
+	return gtk.WrapperGtk(
+			name="Radioport",
+			arguments=arguments,
+			icon="data/artwork/app_icon.png",
+			launcher_options=[
+					MenuOption("Play/Pause", 'p'),
+					MenuOption("Mute", 'm'),
+					MenuOption("Previous Station", '<'),
+					MenuOption("Next Station", '>'),
+					],
+			menu_options={"_File": [MenuOption("Command _Palette", CTRL_P)]},
+			wrapper_window_cls=WrapperWindow
+			)
+
+
+class WrapperWindow(gtk.WrapperWindow):
 	"""
 	Standalone terminal wrapper for the app.
 
 	Displays the app in a libVTE terminal window, like `gnome-terminal` but without the standard terminal functionality.
 	Closes when the app exits.
 	"""
-
-	def __init__(self):
-		wrapper = WrapperCls(
-				name="Radioport",
-				arguments=[],
-				icon="data/artwork/app_icon.png",
-				launcher_options=[
-						MenuOption("Play/Pause", 'p'),
-						MenuOption("Mute", 'm'),
-						MenuOption("Next Station", '>'),
-						MenuOption("Previous Station", '<'),
-						],
-				menu_options={"_File": [MenuOption("Command _Palette", '\x10')]},
-				)
-		super().__init__(wrapper)
 
 	def on_child_exited(self, terminal: "Vte.Terminal", status: int) -> None:
 		"""

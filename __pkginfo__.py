@@ -5,10 +5,10 @@ __all__ = ["extras_require"]
 extras_require = {
 		"wrapper": [
 				'pygobject==3.50.0; platform_system == "Linux"',
-				'textual-wrapper[gtk]>=0.1.0; platform_system == "Linux"'
+				'textual-wrapper[gtk]>=0.3.1; platform_system == "Linux"'
 				],
 		"all": [
 				'pygobject==3.50.0; platform_system == "Linux"',
-				'textual-wrapper[gtk]>=0.1.0; platform_system == "Linux"'
+				'textual-wrapper[gtk]>=0.3.1; platform_system == "Linux"'
 				]
 		}

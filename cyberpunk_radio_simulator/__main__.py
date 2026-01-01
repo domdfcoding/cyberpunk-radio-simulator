@@ -174,22 +174,11 @@ def wrapper(theme: str | None = None, output_dir: str = "data") -> None:
 	Launch the Radioport wrapper window.
 	"""
 
-	# stdlib
-	import sys
-
-	# 3rd party
-	from domdf_python_tools.paths import PathPlus
-
 	# this package
-	from cyberpunk_radio_simulator.wrapper import Wrapper
+	from cyberpunk_radio_simulator.wrapper import setup_wrapper
 
-	wrapper = Wrapper()
-	arguments = [sys.executable, *get_subprocess_arguments(theme, output_dir)]
-	working_directory = PathPlus(__file__).parent.parent.abspath().as_posix()
-	wrapper.run(
-			arguments=arguments,
-			working_directory=working_directory,
-			)
+	wrapper = setup_wrapper(theme, output_dir)
+	wrapper.run()
 
 
 if __name__ == "__main__":
