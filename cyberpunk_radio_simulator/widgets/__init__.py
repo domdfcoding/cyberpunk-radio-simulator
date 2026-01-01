@@ -28,7 +28,6 @@ Textual widgets for terminal GUI.
 
 # stdlib
 import datetime
-import os
 import random
 
 # 3rd party
@@ -36,10 +35,7 @@ from PIL import Image
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, VerticalScroll
 from textual.reactive import reactive
-from textual.widget import Widget
 from textual.widgets import Digits, Label, ProgressBar, RichLog, TabbedContent
-from textual_image.widget import SixelImage
-from textual_image.widget.sixel import _NoopRenderable
 
 # this package
 from cyberpunk_radio_simulator.logos import logo_to_rich
@@ -47,9 +43,7 @@ from cyberpunk_radio_simulator.logos import logo_to_rich
 __all__ = [
 		"Clock",
 		"Column",
-		"StationLogo",
 		"StationLogoRich",
-		"StationLogoSixel",
 		"SubtitleLog",
 		"TC",
 		"ThirdColumn",
@@ -231,22 +225,6 @@ class TrackInfoLabel(Label):
 	"""
 
 
-class StationLogoSixel(SixelImage, Renderable=_NoopRenderable):
-	"""
-	Widget for displaying the station logo as sixels.
-	"""
-
-	DEFAULT_CSS = """
-	StationLogoSixel {
-		width: 30;
-		max-width: 30;
-		height: auto;
-		margin: 1 1 1 1;
-		align: center middle;
-	}
-	"""
-
-
 class StationLogoRich(Label):
 	"""
 	Widget for displaying the station logo.
@@ -278,14 +256,6 @@ class StationLogoRich(Label):
 			else:
 				return logo_to_rich(self.image, 45)
 		return ''
-
-
-StationLogo: type[Widget]
-
-if int(os.getenv("CPRS_SIXEL", 0)) or int(os.getenv("TEXTUAL_WRAPPER_SIXEL", 0)):
-	StationLogo = StationLogoSixel
-else:
-	StationLogo = StationLogoRich
 
 
 class ThirdColumn(VerticalGroup):

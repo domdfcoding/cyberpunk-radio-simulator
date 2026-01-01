@@ -27,6 +27,7 @@ Textual terminal GUI for playback.
 #
 
 # stdlib
+import os
 import random
 from dataclasses import dataclass
 from typing import NamedTuple, cast
@@ -40,6 +41,7 @@ from textual.app import App, ComposeResult
 from textual.binding import ActiveBinding, Binding
 from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right
 from textual.screen import Screen
+from textual.widget import Widget
 from textual.widgets import Footer, Header, Label, OptionList, TabPane
 from textual.widgets.option_list import Option
 
@@ -54,7 +56,7 @@ from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
 		Clock,
-		StationLogo,
+		StationLogoRich,
 		SubtitleLog,
 		ThirdColumn,
 		TrackInfoLabel,
@@ -65,7 +67,16 @@ __all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio", "TrackInfo
 
 station_names = list(stations)
 
-wrapper_child = textual_wrapper.child.ChildHelper()
+wrapper_child = textual_wrapper.child.ChildHelper.new()
+
+StationLogo: type[Widget]
+
+if wrapper_child.sixel_supported or int(os.getenv("CPRS_SIXEL", 0)):
+	# this package
+	from cyberpunk_radio_simulator.widgets.sixel_station_logo import StationLogoSixel
+	StationLogo = StationLogoSixel
+else:
+	StationLogo = StationLogoRich
 
 
 class TextualRadio(AsyncRadio):
@@ -98,7 +109,7 @@ class MainScreen(Screen):
 
 	def compose(self) -> ComposeResult:  # noqa: D102
 
-		if wrapper_child.is_wrapper:
+		if not wrapper_child.is_wrapper:
 			header = Header()
 			header.icon = '⬤'
 			yield header
