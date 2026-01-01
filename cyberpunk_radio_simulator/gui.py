@@ -205,7 +205,7 @@ class RadioportApp(App):
 			Binding(key='q', action="quit", description="Quit"),
 			Binding(key='p', action="play", description="▶ Play "),
 			Binding(key='m', action="mute", description="Mute"),
-			Binding(key='P', action="pause_next", description="Pause after current track"),
+			# Binding(key='P', action="pause_next", description="Pause after current track"),
 			Binding(key='<', action="previous", description="Previous Station"),
 			Binding(key="comma", action="previous", description="Previous Station", show=False),
 			Binding(key='>', action="next", description="Next Station"),
@@ -299,12 +299,12 @@ class RadioportApp(App):
 
 	stop = pause_song
 
-	def action_pause_next(self) -> None:
-		"""
-		Handler for the "Pause after track" button.
-		"""
+	# def action_pause_next(self) -> None:
+	# 	"""
+	# 	Handler for the "Pause after track" button.
+	# 	"""
 
-		self._main_screen.query_one("#log", SubtitleLog).write_line("Pause after this track")
+	# 	self._main_screen.query_one("#log", SubtitleLog).write_line("Pause after this track")
 
 	def load_station(self, station: RadioStation, force_jingle: bool = False) -> None:
 		"""
