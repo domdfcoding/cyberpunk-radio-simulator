@@ -45,6 +45,7 @@ known_third_party = [
     "textual",
     "textual_image",
     "textual_serve",
+    "textual_wrapper",
     "typing_extensions",
     "winrt_windows_media",
     "winrt_windows_media_core",
