@@ -32,24 +32,19 @@ Standalone terminal wrapper for the app.
 # stdlib
 import signal
 import sys
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any
 
 # 3rd party
-import gi  # nodep
 from textual_wrapper.types import MenuOption  # nodep
 from textual_wrapper.wrapper import Wrapper as WrapperCls  # nodep
-from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow  # nodep
 from textual_wrapper.wrapper.unity import WrapperWindow  # nodep
 
 # this package
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
-gi.require_version("Vte", "2.91")  # vte-0.38 (gnome-3.14)
-
-# 3rd party
-from gi.repository import Gdk, Gtk, Vte  # nodep  # noqa: E402
+if TYPE_CHECKING:
+	# 3rd party
+	from gi.repository import Vte  # nodep  # noqa: E402
 
 __all__ = ["Wrapper"]
 
@@ -75,35 +70,9 @@ class Wrapper(WrapperWindow):
 						],
 				menu_options={"_File": [MenuOption("Command _Palette", '\x10')]},
 				)
+		super().__init__(wrapper)
 
-		Gtk.Window.__init__(self, title=wrapper.name)
-
-		self.terminal = Terminal.new()
-		self.terminal.set_color_background(Gdk.RGBA(0.071, 0.071, 0.071, 1.0))
-		# Matches background colour of default textual theme.
-
-		self.menu_options: dict[Gtk.MenuItem, bytes] = {}
-		menubar = self.create_menu_options(wrapper.menu_options)
-
-		self.launcher_options: dict[str, bytes] = {
-				"Play/Pause": b"p",
-				"Mute": b"m",
-				"Next Station": b">",
-				"Previous Station": b"<",
-				}
-
-		box = Gtk.HBox()
-		self.add(box)
-		box.pack_start(menubar, False, True, 0)
-		box.add(MainWindow().add_widget(cast(Gtk.Widget, self.terminal)))
-
-		self.set_window_size((805, 600))
-		self.set_border_width(0)
-		if wrapper.icon:
-			self.set_icon_from_file(wrapper.icon)
-		self.set_wmclass(wrapper.name.lower(), wrapper.name)
-
-	def on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
+	def on_child_exited(self, terminal: "Vte.Terminal", status: int) -> None:
 		"""
 		Handler for the process running in the terminal exiting.
 
