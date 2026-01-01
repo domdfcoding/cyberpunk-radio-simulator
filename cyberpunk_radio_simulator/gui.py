@@ -56,6 +56,7 @@ from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
 		Clock,
+		PlaybackHeader,
 		StationLogoRich,
 		SubtitleLog,
 		ThirdColumn,
@@ -116,7 +117,7 @@ class MainScreen(Screen):
 
 		yield Footer()
 
-		with HorizontalGroup():
+		with PlaybackHeader():
 			with ThirdColumn():
 				yield TrackInfoLabel("Station Name", id="station-name")
 				yield TrackInfoLabel("Artist - Track Title", id="track-info")

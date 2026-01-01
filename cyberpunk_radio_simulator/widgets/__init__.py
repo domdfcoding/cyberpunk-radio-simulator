@@ -33,7 +33,7 @@ import random
 # 3rd party
 from PIL import Image
 from textual.app import ComposeResult
-from textual.containers import VerticalGroup, VerticalScroll
+from textual.containers import HorizontalGroup, VerticalGroup, VerticalScroll
 from textual.reactive import reactive
 from textual.widgets import Digits, Label, ProgressBar, RichLog, TabbedContent
 
@@ -43,6 +43,7 @@ from cyberpunk_radio_simulator.logos import logo_to_rich
 __all__ = [
 		"Clock",
 		"Column",
+		"PlaybackHeader",
 		"StationLogoRich",
 		"SubtitleLog",
 		"TC",
@@ -286,3 +287,17 @@ class TC(TabbedContent):
 
 	def on_mount(self) -> None:  # noqa: D102
 		self.show_tab("tab-subtitles")
+
+
+class PlaybackHeader(HorizontalGroup):
+	"""
+	The top part of the screen with the track and station info and playback position widgets.
+
+	4 lines tall.
+	"""
+
+	DEFAULT_CSS = """
+    PlaybackHeader {
+        height: 4;
+    }
+    """
