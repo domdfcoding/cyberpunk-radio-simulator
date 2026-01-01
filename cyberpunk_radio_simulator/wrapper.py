@@ -32,6 +32,7 @@ Standalone terminal wrapper for the app.
 # stdlib
 import signal
 import sys
+import time
 from typing import TYPE_CHECKING, Any
 
 # 3rd party
@@ -108,8 +109,10 @@ class WrapperWindow(gtk.WrapperWindow):
 		"""
 
 		if signalnum == SIGRAISE:
-			# TODO: this doesn't always bring it to the foreground, only wiggle the tray icon.
+			self.set_keep_above(True)
 			self.present()
+			time.sleep(0.001)
+			self.set_keep_above(False)
 
 	def run(
 			self,
