@@ -39,7 +39,7 @@ from just_playback import Playback  # type: ignore[import-untyped]
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import ActiveBinding, Binding
-from textual.containers import Center, HorizontalGroup, HorizontalScroll, Right
+from textual.containers import Center, HorizontalScroll, Right
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Label, OptionList, TabPane
