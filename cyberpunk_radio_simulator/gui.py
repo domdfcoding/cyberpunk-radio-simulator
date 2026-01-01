@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from typing import NamedTuple, cast
 
 # 3rd party
+import textual_wrapper.child
 from domdf_python_tools.paths import PathPlus
 from just_playback import Playback  # type: ignore[import-untyped]
 from textual import events, work
@@ -64,6 +65,8 @@ __all__ = ["MainScreen", "MuteState", "RadioportApp", "TextualRadio", "TrackInfo
 
 station_names = list(stations)
 
+wrapper_child = textual_wrapper.child.ChildHelper()
+
 
 class TextualRadio(AsyncRadio):
 	"""
@@ -94,9 +97,12 @@ class MainScreen(Screen):
 	"""
 
 	def compose(self) -> ComposeResult:  # noqa: D102
-		header = Header()
-		header.icon = '⬤'
-		yield header
+
+		if wrapper_child.is_wrapper:
+			header = Header()
+			header.icon = '⬤'
+			yield header
+
 		yield Footer()
 
 		with HorizontalGroup():
