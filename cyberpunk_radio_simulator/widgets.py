@@ -282,7 +282,7 @@ class StationLogoRich(Label):
 
 StationLogo: type[Widget]
 
-if int(os.getenv("CPRS_SIXEL", 0)) or int(os.getenv("TEXTUAL_WRAPPER", 0)):
+if int(os.getenv("CPRS_SIXEL", 0)) or int(os.getenv("TEXTUAL_WRAPPER_SIXEL", 0)):
 	StationLogo = StationLogoSixel
 else:
 	StationLogo = StationLogoRich
