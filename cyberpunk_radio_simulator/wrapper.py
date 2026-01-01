@@ -36,12 +36,12 @@ from typing import Any, cast
 
 # 3rd party
 import gi  # nodep
-from domdf_python_tools.paths import PathPlus
-from textual_wrapper.wrapper import MenuOption  # nodep
+from textual_wrapper.types import MenuOption  # nodep
+from textual_wrapper.wrapper import Wrapper as WrapperCls  # nodep
 from textual_wrapper.wrapper.gtk import MainWindow, Terminal, WrapperWindow  # nodep
+from textual_wrapper.wrapper.unity import WrapperWindow  # nodep
 
 # this package
-from cyberpunk_radio_simulator.cli import get_subprocess_arguments
 from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 gi.require_version("Gtk", "3.0")
@@ -63,14 +63,27 @@ class Wrapper(WrapperWindow):
 	"""
 
 	def __init__(self):
-		Gtk.Window.__init__(self, title="Radioport")
+		wrapper = WrapperCls(
+				name="Radioport",
+				arguments=[],
+				icon="data/artwork/app_icon.png",
+				launcher_options=[
+						MenuOption("Play/Pause", 'p'),
+						MenuOption("Mute", 'm'),
+						MenuOption("Next Station", '>'),
+						MenuOption("Previous Station", '<'),
+						],
+				menu_options={"_File": [MenuOption("Command _Palette", '\x10')]},
+				)
+
+		Gtk.Window.__init__(self, title=wrapper.name)
 
 		self.terminal = Terminal.new()
 		self.terminal.set_color_background(Gdk.RGBA(0.071, 0.071, 0.071, 1.0))
 		# Matches background colour of default textual theme.
 
 		self.menu_options: dict[Gtk.MenuItem, bytes] = {}
-		menubar = self.create_menu_options({"_File": [MenuOption("Command _Palette", '\x10')]})
+		menubar = self.create_menu_options(wrapper.menu_options)
 
 		self.launcher_options: dict[str, bytes] = {
 				"Play/Pause": b"p",
@@ -86,8 +99,9 @@ class Wrapper(WrapperWindow):
 
 		self.set_window_size((805, 600))
 		self.set_border_width(0)
-		self.set_icon_from_file("data/artwork/app_icon.png")
-		self.set_wmclass("radioport", "Radioport")
+		if wrapper.icon:
+			self.set_icon_from_file(wrapper.icon)
+		self.set_wmclass(wrapper.name.lower(), wrapper.name)
 
 	def on_child_exited(self, terminal: Vte.Terminal, status: int) -> None:
 		"""
@@ -117,15 +131,17 @@ class Wrapper(WrapperWindow):
 			# TODO: this doesn't always bring it to the foreground, only wiggle the tray icon.
 			self.present()
 
-	def run(self, theme: str | None = None, output_directory: str = "data") -> None:
+	def run(
+			self,
+			arguments: list[str],
+			working_directory: str,
+			) -> None:
 		"""
 		Show the wrapper window and launch the Textual app.
 
-		:param theme: The Textual theme to use.
-		:param output_directory: Directory containing files extracted from the game.
+		:param arguments: The app executable and any arguments to pass to it.
+		:param working_directory: Directory to execute the application in.
 		"""
 
 		signal.signal(SIGRAISE, self.on_raise_signal)
-		arguments = [sys.executable, *get_subprocess_arguments(theme, output_directory)]
-		working_directory = PathPlus(__file__).parent.parent.abspath().as_posix()
-		super().run(arguments, working_directory)
+		super().run(arguments=arguments, working_directory=working_directory)

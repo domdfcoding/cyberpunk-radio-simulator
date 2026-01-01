@@ -22,8 +22,8 @@ python_versions:
 
 extras_require:
  wrapper:
-  - pygobject==3.50.0
-  - textual-wrapper[gtk]@ git+https://github.com/domdfcoding/textual-wrapper.git
+  - pygobject==3.50.0; platform_system == "Linux"
+  - textual-wrapper[gtk]>=0.1.0; platform_system == "Linux"
 
 console_scripts:
  - radioport = cyberpunk_radio_simulator.__main__:main
