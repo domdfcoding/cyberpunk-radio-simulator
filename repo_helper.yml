@@ -25,5 +25,11 @@ extras_require:
   - pygobject==3.50.0; platform_system == "Linux"
   - textual-wrapper[gtk]>=0.3.1; platform_system == "Linux"
 
+github_ci_requirements:
+ Linux:
+  post:
+   - sudo apt update
+   - sudo apt install libgirepository1.0-dev libgtk-3-dev libvte-2.91-0 gir1.2-vte-2.91
+
 console_scripts:
  - radioport = cyberpunk_radio_simulator.__main__:main
