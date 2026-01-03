@@ -23,7 +23,7 @@ python_versions:
 extras_require:
  wrapper:
   - pygobject==3.50.0; platform_system == "Linux"
-  - textual-wrapper[gtk]>=0.3.1; platform_system == "Linux"
+  - textual-wrapper[gtk]>=0.4.0; platform_system == "Linux"
 
 github_ci_requirements:
  Linux:
