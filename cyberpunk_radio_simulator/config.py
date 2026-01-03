@@ -199,6 +199,9 @@ class Config(config.Config):
 	notifications: NotificationsConfig = config.subtable_field(NotificationsConfig)
 	gui: GuiConfig = config.subtable_field(GuiConfig)
 
+	#: The file the config was read from.
+	config_file: PathPlus | None = None
+
 	@classmethod
 	def load(cls: type[Self]) -> Self:
 		"""
@@ -210,7 +213,9 @@ class Config(config.Config):
 		if not file:
 			raise FileNotFoundError(f"Config file 'config.toml' or 'radioport.toml' not found.")
 
-		return cls.from_file(file)
+		self = cls.from_file(file)
+		self.config_file = file
+		return self
 
 	@classmethod
 	def from_file(cls: type[Self], config_file: PathLike) -> Self:
@@ -245,7 +250,7 @@ class Config(config.Config):
 
 		return PathPlus(path)
 
-	def get_output_dir(self, override: str | None = None, default: str = "data") -> PathPlus:
+	def get_output_dir(self, override: str | None = None, default: PathLike = "data") -> PathPlus:
 		"""
 		Get the directory containing the extracted game files.
 
@@ -255,10 +260,20 @@ class Config(config.Config):
 
 		path = override or self.output_dir or default
 
-		if not isinstance(path, str):
-			raise ValueError(f"Invalid output/data directory {path!r}")
+		if path is None:
+			raise ValueError(f"Invalid output/data directory: None")
 
-		return PathPlus(path)
+		path_p = PathPlus(path)
+
+		if not path_p.is_absolute():
+			if self.config_file:
+				parent = self.config_file.parent
+			else:
+				parent = PathPlus('.').abspath()
+
+			return parent / path_p
+
+		return path_p
 
 
 def find_config_file() -> PathPlus | None:

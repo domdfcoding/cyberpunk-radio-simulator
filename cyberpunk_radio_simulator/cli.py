@@ -27,12 +27,14 @@ Helper functions for the click command line.
 #
 
 # stdlib
+import os
 from collections.abc import Callable, Iterable, Sequence
 from typing import TypeVar
 
 # 3rd party
 import click
 from consolekit.options import ChoiceOption
+from domdf_python_tools.typing import PathLike
 from natsort import natsorted
 
 __all__ = [
@@ -146,10 +148,10 @@ def output_dir_option(help_text: str = "Path to the extracted game files.") -> C
 	:param help_text:
 	"""
 
-	return click.option("-o", "--output-dir", default="data", help=help_text)
+	return click.option("-o", "--output-dir", help=help_text)
 
 
-def get_subprocess_arguments(theme: str | None = None, output_directory: str = "data") -> list[str]:
+def get_subprocess_arguments(theme: str | None = None, output_directory: PathLike = "data") -> list[str]:
 	"""
 	Returns arguments to use when invoking the program through a wrapper.
 
@@ -157,7 +159,7 @@ def get_subprocess_arguments(theme: str | None = None, output_directory: str = "
 	:param output_directory: Directory containing files extracted from the game.
 	"""
 
-	arguments = ["-m", "cyberpunk_radio_simulator", "gui", "-o", output_directory]
+	arguments = ["-m", "cyberpunk_radio_simulator", "gui", "-o", os.fspath(output_directory)]
 
 	if theme:
 		arguments.extend(["--theme", theme])

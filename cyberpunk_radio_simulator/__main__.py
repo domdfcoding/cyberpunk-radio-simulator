@@ -55,7 +55,7 @@ def main() -> None:
 @click.option("-i", "--install-dir", default=None, help="Path to the Cyberpunk 2077 installation.")
 @flag_option("-v", "--verbose", help="Show individual tracks being processed.")
 @main.command()
-def extract(install_dir: str | None = None, output_dir: str = "data", verbose: bool = False) -> None:
+def extract(install_dir: str | None = None, output_dir: str | None = None, verbose: bool = False) -> None:
 	"""
 	Extract relevant files and data from the game.
 	"""
@@ -79,7 +79,7 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 @station_option()
 @output_dir_option()
 @main.command()
-def play(station_name: str, output_dir: str = "data") -> None:
+def play(station_name: str, output_dir: str | None = None) -> None:
 	"""
 	Play radio station in the terminal.
 	"""
@@ -123,7 +123,7 @@ def play(station_name: str, output_dir: str = "data") -> None:
 @theme_option()
 @output_dir_option()
 @main.command()
-def gui(theme: str | None = None, output_dir: str = "data") -> None:
+def gui(theme: str | None = None, output_dir: str | None = None) -> None:
 	"""
 	Launch the Radioport GUI.
 	"""
@@ -143,7 +143,7 @@ def gui(theme: str | None = None, output_dir: str = "data") -> None:
 @theme_option()
 @output_dir_option()
 @main.command()
-def web(theme: str | None = None, output_dir: str = "data") -> None:
+def web(theme: str | None = None, output_dir: str | None = None) -> None:
 	"""
 	Launch the Radioport web UI.
 	"""
@@ -155,7 +155,11 @@ def web(theme: str | None = None, output_dir: str = "data") -> None:
 	# 3rd party
 	from textual_serve.server import Server
 
-	arguments = [shlex.quote(sys.executable), *get_subprocess_arguments(theme, output_dir)]
+	# this package
+	from cyberpunk_radio_simulator.config import Config
+
+	config = Config.load()
+	arguments = [shlex.quote(sys.executable), *get_subprocess_arguments(theme, config.get_output_dir(output_dir))]
 	server = Server(' '.join(arguments), title="Radioport")
 	server.serve(debug=True)
 
@@ -163,15 +167,17 @@ def web(theme: str | None = None, output_dir: str = "data") -> None:
 @theme_option()
 @output_dir_option()
 @main.command()
-def wrapper(theme: str | None = None, output_dir: str = "data") -> None:
+def wrapper(theme: str | None = None, output_dir: str | None = None) -> None:
 	"""
 	Launch the Radioport wrapper window.
 	"""
 
 	# this package
+	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.wrapper import setup_wrapper
 
-	wrapper = setup_wrapper(theme, output_dir)
+	config = Config.load()
+	wrapper = setup_wrapper(theme, config.get_output_dir(output_dir))
 	wrapper.run()
 
 

@@ -30,12 +30,14 @@ Standalone terminal wrapper for the app.
 #
 
 # stdlib
+import posixpath
 import signal
 import sys
 import time
 from typing import TYPE_CHECKING, Any
 
 # 3rd party
+from domdf_python_tools.typing import PathLike
 from textual_wrapper.keycodes import CTRL_P
 from textual_wrapper.types import MenuOption, Wrapper
 from textual_wrapper.wrapper import gtk
@@ -51,7 +53,7 @@ if TYPE_CHECKING:
 __all__ = ["WrapperWindow", "setup_wrapper"]
 
 
-def setup_wrapper(theme: str | None = None, output_directory: str = "data") -> Wrapper:
+def setup_wrapper(theme: str | None = None, output_directory: PathLike = "data") -> Wrapper:
 	"""
 	Creates the wrapper instance with menu and launcher options.
 
@@ -64,7 +66,7 @@ def setup_wrapper(theme: str | None = None, output_directory: str = "data") -> W
 	return gtk.WrapperGtk(
 			name="Radioport",
 			arguments=arguments,
-			icon="data/artwork/app_icon.png",
+			icon=posixpath.join(output_directory, "artwork/app_icon.png"),
 			launcher_options=[
 					MenuOption("Play/Pause", 'p'),
 					MenuOption("Mute", 'm'),
