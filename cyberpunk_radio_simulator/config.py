@@ -34,6 +34,7 @@ from typing import Any
 # 3rd party
 import attrs
 import dom_toml
+import platformdirs
 from dom_toml import config
 from domdf_python_tools.paths import PathPlus
 from domdf_python_tools.typing import PathLike
@@ -285,8 +286,15 @@ def find_config_file() -> PathPlus | None:
 
 	cwd = PathPlus.cwd()
 	home_dir = PathPlus.home()
+	config_dir = PathPlus(
+			platformdirs.user_config_path(
+					appname="radioport",
+					appauthor="domdfcoding",
+					ensure_exists=False,
+					)
+			)
 
-	for directory in [cwd, *cwd.parents]:
+	for directory in [cwd, *cwd.parents, config_dir]:
 		for filename in ("config.toml", "radioport.toml"):
 			path = directory / filename
 			if path.is_file():
