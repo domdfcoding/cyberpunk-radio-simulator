@@ -128,5 +128,8 @@ class WrapperWindow(gtk.WrapperWindow):
 		:param working_directory: Directory to execute the application in.
 		"""
 
+		self.terminal.hide_cursor()
+		# TODO: disable selection (maybe clear selection when selection changes?)
+
 		signal.signal(SIGRAISE, self.on_raise_signal)
 		super().run(arguments=arguments, working_directory=working_directory)
