@@ -144,29 +144,31 @@ class NotificationsConfig(config.Config):
 	Configuration for notifications.
 	"""
 
-	urgency: str | None = None  # "critical" or "low" or "normal"
-	logo_style: str | None = None  # "white" or "album art"
+	#: The notification urgency; either ``"critical"`, ``"low"`` or ``"normal"``
+	urgency: str | None = None
 
-	# TODO
-	# def get_logo_style(self, override: str | None = None, default: str = "white") -> str:
-	# 	"""
-	# 	Get the logo style (white or album art).
+	#: The logo style to use in notifications. Either ``"white"`` for the station logo in white, or ``"album art"`` for the album art-style image (dark red background, blue logo).
+	logo_style: str | None = None
 
-	# 	:param override: A value to override the one in the config file, e.g. from the command line.
-	# 	:param default: The default value if not set.
-	# 	"""
+	def get_logo_style(self, override: str | None = None, default: str = "white") -> str:
+		"""
+		Get the logo style (white or album art).
 
-	# 	style = override or self.logo_style or default
+		:param override: A value to override the one in the config file, e.g. from the command line.
+		:param default: The default value if not set.
+		"""
 
-	# 	if not isinstance(style, str):
-	# 		raise ValueError("logo_style must be a string.")
+		style = override or self.logo_style or default
 
-	# 	style = style.lower().replace('_', ' ').strip()
+		if not isinstance(style, str):
+			raise ValueError("logo_style must be a string.")
 
-	# 	if style not in {"white", "album art"}:
-	# 		raise ValueError(f"Invalid logo_style {style!r}")
+		style = style.lower().replace('_', ' ').strip()
 
-	# 	return style
+		if style not in {"white", "album art"}:
+			raise ValueError(f"Invalid logo_style {style!r}")
+
+		return style
 
 	def get_urgency(self, override: str | None = None, default: str = "normal") -> int:
 		"""

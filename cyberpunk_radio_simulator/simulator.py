@@ -271,6 +271,9 @@ class Radio:
 	#: Urgency to send the notification with.
 	notification_urgency: int = URGENCY_NORMAL
 
+	#: The logo style to use in notifications. Either ``"white"`` for the station logo in white, or ``"album art"`` for the album art-style image (dark red background, blue logo).
+	notification_logo_style: str = "white"
+
 	def __init__(self, station: RadioStation, player: Playback):
 		self.station = station
 		self.player = player
@@ -299,7 +302,12 @@ class Radio:
 		:param tune:
 		"""
 
-		icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
+		if self.notification_logo_style == "white":
+			icon_file = self.station.station_logos_directory.abspath() / f"{self.station.station.name}.png"
+		elif self.notification_logo_style == "album art":
+			icon_file = self.station.album_art_directory.abspath() / f"{self.station.station.name}.png"
+		else:
+			raise ValueError(f"Invalid logo style {self.notification_logo_style!r}")
 
 		# TODO: cancel unsend ones when switching station
 		NotificationSender.send(

@@ -501,6 +501,7 @@ class RadioportApp(App):
 		station = RadioStation(self.station_data, output_directory=self.data_directory)
 		self.radio = TextualRadio(station=station, player=self.player)
 		self.radio.notification_urgency = self.config.notifications.get_urgency()
+		self.radio.notification_logo_style = self.config.notifications.get_logo_style()
 		# TODO: get_logo_style
 
 		self.station = station
