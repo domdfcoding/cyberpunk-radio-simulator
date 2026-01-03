@@ -177,6 +177,9 @@ class TrackProgress(ProgressBar):
 	TrackProgress {
 		height: 2;
 		layout: horizontal;
+		width: 1fr;
+		padding-left: 1;
+		padding-right: 1;
 	}
 
 	TrackProgress Bar {
