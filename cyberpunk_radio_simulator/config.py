@@ -26,17 +26,21 @@ Config file handling.
 #  OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# TODO: use platformdirs and have file (and output data) in .config
+
 # stdlib
-import os
 from typing import Any
 
 # 3rd party
+import attrs
 import dom_toml
+from dom_toml import config
 from domdf_python_tools.paths import PathPlus
 from domdf_python_tools.typing import PathLike
 from notify_rs import URGENCY_CRITICAL, URGENCY_LOW, URGENCY_NORMAL
+from typing_extensions import Self
 
-__all__ = ["Config"]
+__all__ = ["Config", "GuiConfig", "NotificationsConfig", "find_config_file"]
 
 urgency_map = {
 		"critical": URGENCY_CRITICAL,
@@ -45,23 +49,187 @@ urgency_map = {
 		}
 
 
-class Config:
+@attrs.define
+class GuiConfig(config.Config):
 	"""
-	Access application config.
-
-	:param config_file: File to read config from.
+	Configuration for the Textual-based GUI.
 	"""
 
-	def __init__(self, config_file: PathLike = "config.toml"):
-		if not os.path.isfile(config_file):
-			raise FileNotFoundError(config_file)
+	resume_last_station: bool | None = None
+	last_station: str | None = None
+	theme: str | None = None
+	playback_animation: str | None = None  # "bars" or "sine"
+
+	# TODO: window size/position?
+
+	# TODO
+	# def get_resume_last_station(self, override: bool | None = None, default: bool = False) -> bool:
+	# 	"""
+	# 	Whether to resume the last station played when opening.
+
+	# 	:param override: A value to override the one in the config file, e.g. from the command line.
+	# 	:param default: The default value if not set.
+	# 	"""
+
+	# 	if override is not None:
+	# 		return override
+	# 	elif self.resume_last_station is not None:
+	# 		return self.resume_last_station
+	# 	else:
+	# 		return default
+
+	# TODO
+	# def get_last_station(self, override: str | None = None) -> str | None:
+	# 	"""
+	# 	Get the last station played.
+
+	# 	:param override: A value to override the one in the config file, e.g. from the command line.
+	# 	"""
+
+	# 	if not self.get_resume_last_station():
+	# 		return None
+
+	# 	station = override or self.last_station
+
+	# 	if station is None:
+	# 		return None
+
+	# 	if not isinstance(station, str):
+	# 		raise ValueError(f"last_station must be a string.")
+
+	# 	return station
+
+	def get_theme(self, override: str | None = None) -> str | None:
+		"""
+		Get the theme.
+
+		:param override: A value to override the one in the config file, e.g. from the command line.
+		"""
+
+		theme = override or self.theme
+
+		if theme is None:
+			return None
+
+		if not isinstance(theme, str):
+			raise ValueError(f"Theme must be a string.")
+
+		return theme
+
+	def get_playback_animation(self, override: str | None = None, default: str = "bars") -> str:
+		"""
+		Get the logo style (white or album art).
+
+		:param override: A value to override the one in the config file, e.g. from the command line.
+		:param default: The default value if not set.
+		"""
+
+		style = override or self.playback_animation or default
+
+		if not isinstance(style, str):
+			raise ValueError("playback_animation must be a string.")
+
+		style = style.lower().replace('_', ' ').strip()
+
+		if style not in {"bars", "sine"}:
+			raise ValueError(f"Invalid playback_animation {style!r}")
+
+		return style
+
+
+@attrs.define
+class NotificationsConfig(config.Config):
+	"""
+	Configuration for notifications.
+	"""
+
+	urgency: str | None = None  # "critical" or "low" or "normal"
+	logo_style: str | None = None  # "white" or "album art"
+
+	# TODO
+	# def get_logo_style(self, override: str | None = None, default: str = "white") -> str:
+	# 	"""
+	# 	Get the logo style (white or album art).
+
+	# 	:param override: A value to override the one in the config file, e.g. from the command line.
+	# 	:param default: The default value if not set.
+	# 	"""
+
+	# 	style = override or self.logo_style or default
+
+	# 	if not isinstance(style, str):
+	# 		raise ValueError("logo_style must be a string.")
+
+	# 	style = style.lower().replace('_', ' ').strip()
+
+	# 	if style not in {"white", "album art"}:
+	# 		raise ValueError(f"Invalid logo_style {style!r}")
+
+	# 	return style
+
+	def get_urgency(self, override: str | None = None, default: str = "normal") -> int:
+		"""
+		Get the notification urgency.
+
+		:param override: A value to override the one in the config file, e.g. from the command line.
+		:param default: The default value if not set.
+		"""
+
+		notification_urgency = override or self.urgency or default
+
+		if notification_urgency is None:
+			raise ValueError(f"Urgency cannot be None")
+
+		notification_urgency = notification_urgency.lower()
+
+		if notification_urgency not in urgency_map:
+			raise ValueError(f"Invalid urgency value {notification_urgency!r}")
+
+		return urgency_map[notification_urgency]
+
+
+@attrs.define
+class Config(config.Config):
+	"""
+	Application configuration.
+	"""
+
+	install_dir: PathPlus | None = None
+	output_dir: PathPlus | None = None
+	notifications: NotificationsConfig = config.subtable_field(NotificationsConfig)
+	gui: GuiConfig = config.subtable_field(GuiConfig)
+
+	@classmethod
+	def load(cls: type[Self]) -> Self:
+		"""
+		Detect the config file and load the configuration from it.
+		"""
+
+		file = find_config_file()
+
+		if not file:
+			raise FileNotFoundError(f"Config file 'config.toml' or 'radioport.toml' not found.")
+
+		return cls.from_file(file)
+
+	@classmethod
+	def from_file(cls: type[Self], config_file: PathLike) -> Self:
+		"""
+		Load configuration from the given file.
+
+		:param config_file:
+		"""
+
+		file = PathPlus(config_file)
+		if not file.is_file():
+			raise FileNotFoundError(f"Config file {file.as_posix()!r} not found.")
 
 		config: dict[str, Any] = dom_toml.load(config_file)
 
 		if "config" not in config:
 			raise KeyError(f"'config' table not found in {config_file}")
 
-		self._config = config["config"]
+		return cls.from_dict(config["config"])
 
 	def get_install_dir(self, override: str | None = None) -> PathPlus:
 		"""
@@ -70,34 +238,48 @@ class Config:
 		:param override: A value to override the one in the config file, e.g. from the command line.
 		"""
 
-		path = override or self._config["install_dir"]
+		path = override or self.install_dir
+
 		if not isinstance(path, str):
 			raise ValueError(f"Invalid install directory {path!r}")
 
 		return PathPlus(path)
 
-	def get_output_dir(self, override: str | None = None) -> PathPlus:
+	def get_output_dir(self, override: str | None = None, default: str = "data") -> PathPlus:
 		"""
 		Get the directory containing the extracted game files.
 
 		:param override: A value to override the one in the config file, e.g. from the command line.
+		:param default: The default value if not set.
 		"""
 
-		path = override or self._config["output_dir"]
+		path = override or self.output_dir or default
+
 		if not isinstance(path, str):
 			raise ValueError(f"Invalid output/data directory {path!r}")
 
 		return PathPlus(path)
 
-	def get_notification_urgency(self) -> int:
-		"""
-		Get the notification urgency.
-		"""
 
-		notifications_table: dict[str, str] = self._config.get("notifications", {})
-		notification_urgency = notifications_table.get("urgency", "normal").lower()
+def find_config_file() -> PathPlus | None:
+	"""
+	Find the config file (``config.toml`` or ``radioport.toml``) in the current directory or its parents.
 
-		if notification_urgency not in urgency_map:
-			raise ValueError(f"Invalid urgency value {notification_urgency!r}")
+	Returns :py:obj:`None` if not found.
+	"""
 
-		return urgency_map[notification_urgency]
+	cwd = PathPlus.cwd()
+	home_dir = PathPlus.home()
+
+	for directory in [cwd, *cwd.parents]:
+		for filename in ("config.toml", "radioport.toml"):
+			path = directory / filename
+			if path.is_file():
+				return path
+
+		if directory == home_dir:
+			break
+
+	# TODO: use platformdirs config directory
+
+	return None

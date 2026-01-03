@@ -201,17 +201,49 @@ class TrackInfo(NamedTuple):
 class RadioportApp(App):
 	"""
 	Textual terminal app for playing the Cyberpunk radio.
+
+	:param config: Application configuration.
+	:param data_directory: Directory containing files extracted from the game.
+	:param theme: Theme to use.
 	"""
 
-	data_dir: PathPlus
+	__slots__ = (
+			"data_directory",
+			"station_data",
+			"station",
+			"radio",
+			"player",
+			"mute_state",
+			"track_info",
+			"_main_screen",
+			"media_control",
+			)
+
+	#: Directory containing files extracted from the game.
+	data_directory: PathPlus
+
+	#: The current radio station.
 	station_data: StationData
+
+	#: Emits events to simulate playing the radio station.
 	station: RadioStation
+
+	#: Object to play the current radio station.
 	radio: TextualRadio
+
+	#: Object for controlling audio playback.
 	player: Playback
+
+	#: Whether the radio is muted.
 	mute_state: MuteState
+
+	#: The current track's artist and title.
 	track_info: TrackInfo
-	_main_screen: MainScreen
+
+	#: Interface to desktop playback controls (Windows and DBus)
 	media_control: MediaControl
+
+	_main_screen: MainScreen
 
 	CSS = """
 	Screen { align: center middle; }
@@ -230,13 +262,33 @@ class RadioportApp(App):
 			Binding(key='.', action="next", description="Next Station", show=False),
 			]
 
-	def on_mount(self) -> None:  # noqa: D102
-		self.title = "Radioport"
+	def __init__(self, config: Config, data_directory: PathPlus, theme: str | None):
+		super().__init__()
 
+		self.config = config
+		self.data_directory = data_directory
+
+		theme = config.gui.get_theme(theme)
+		if theme:
+			self.theme = theme
+
+		self.title = "Radioport"
+		self.player = Playback()
+		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
+		self.track_info = TrackInfo()
+
+	def on_ready(self) -> None:  # noqa: D102
 		self._main_screen = MainScreen()
 		self.push_screen(self._main_screen)
+		self.call_after_refresh(self.after_first_refresh)
 
-		self.player = Playback()
+	def after_first_refresh(self) -> None:
+		"""
+		Called after the screen has been refreshed for the first time.
+		"""
+
+		self.setup_track_position()
+		self.setup_radio()
 
 	def action_mute(self) -> None:
 		"""
@@ -359,7 +411,7 @@ class RadioportApp(App):
 		if event.option_list.id == "station-selector":
 			self.station_data = stations[cast(str, event.option.id)]
 
-			station = RadioStation(self.station_data, output_directory=self.data_dir)
+			station = RadioStation(self.station_data, output_directory=self.data_directory)
 			# self.radio = TextualRadio(station=station, player=self.player)
 
 			self.load_station(station, force_jingle=True)
@@ -376,7 +428,7 @@ class RadioportApp(App):
 		self.station_data = stations[station_names[new_index]]
 		# self._main_screen.query_one("#log", SubtitleLog).write_line("Next Station")
 
-		self.load_station(RadioStation(self.station_data, output_directory=self.data_dir))
+		self.load_station(RadioStation(self.station_data, output_directory=self.data_directory))
 
 	def action_previous(self) -> None:
 		"""
@@ -390,7 +442,7 @@ class RadioportApp(App):
 		self.station_data = stations[station_names[new_index]]
 		# self._main_screen.query_one("#log", SubtitleLog).write_line("Previous Station")
 
-		self.load_station(RadioStation(self.station_data, output_directory=self.data_dir))
+		self.load_station(RadioStation(self.station_data, output_directory=self.data_directory))
 
 	next = action_next
 	previous = action_previous
@@ -420,6 +472,9 @@ class RadioportApp(App):
 		Setup the track position progressbar.
 		"""
 
+		progbar = self._main_screen.query_one("#track-progress", TrackProgress)
+		progbar.animation = self.config.gui.get_playback_animation()
+
 		self.set_interval(0.1, self.update_track_position)
 
 	def update_track_position(self) -> None:
@@ -437,23 +492,16 @@ class RadioportApp(App):
 
 		self.media_control = MediaControl(self)
 
-	def on_ready(self) -> None:  # noqa: D102
-		self.track_info = TrackInfo()
-
-		self.setup_track_position()
-
-		self.mute_state = MuteState(self.player.volume == 0, self.player.volume)
-		self.call_after_refresh(self.setup_radio)
-
 	def setup_radio(self) -> None:
 		"""
 		Setup the :class:`~.Radio` class.
 		"""
 
 		self.station_data = stations[random.choice(station_names)]
-		station = RadioStation(self.station_data, output_directory=self.data_dir)
+		station = RadioStation(self.station_data, output_directory=self.data_directory)
 		self.radio = TextualRadio(station=station, player=self.player)
-		self.radio.notification_urgency = Config("config.toml").get_notification_urgency()
+		self.radio.notification_urgency = self.config.notifications.get_urgency()
+		# TODO: get_logo_style
 
 		self.station = station
 		self.setup_media_control()
@@ -475,8 +523,3 @@ class RadioportApp(App):
 				"album_art": album_art.as_uri(),
 				"track_id": 1234,  # TODO
 				}
-
-
-if __name__ == "__main__":
-	app = RadioportApp()
-	app.run()

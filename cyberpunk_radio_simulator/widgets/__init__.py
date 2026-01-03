@@ -28,7 +28,7 @@ Textual widgets for terminal GUI.
 
 # stdlib
 import datetime
-import random
+from typing import NamedTuple
 
 # 3rd party
 from PIL import Image
@@ -51,6 +51,7 @@ __all__ = [
 		"TrackInfoLabel",
 		"TrackProgress",
 		"TrackProgressLabel",
+		"TrackProgressAnimation",
 		]
 
 
@@ -104,12 +105,25 @@ class SubtitleLog(RichLog):
 		self.write(message)
 
 
-if random.getrandbits(1):
-	audio_bars = "▁▂▃▄▅▆▇█▇▆▅▄▃▁"
-	bar_step = 3
-else:
-	audio_bars = "⠁⠂⠄⡀⢀⠠⠐⠈⠁⠂⠄⡀⢀⠠⠐⠈"
-	bar_step = 2
+class TrackProgressAnimation(NamedTuple):
+	"""
+	Animation for the :class:`~.TrackProgressLabel`.
+	"""
+
+	chars: str
+	step: int
+
+
+track_progress_animations = dict(
+		bars=TrackProgressAnimation(
+				chars="▁▂▃▄▅▆▇█▇▆▅▄▃▁",
+				step=3,
+				),
+		sine=TrackProgressAnimation(
+				chars="⠁⠂⠄⡀⢀⠠⠐⠈⠁⠂⠄⡀⢀⠠⠐⠈",
+				step=2,
+				),
+		)
 
 
 class TrackProgressLabel(Label):
@@ -128,6 +142,7 @@ class TrackProgressLabel(Label):
 	duration: reactive[float] = reactive(0.0)
 	paused: reactive[bool] = reactive(False)
 	muted: reactive[bool] = reactive(False)
+	animation: reactive[str] = reactive("bars")
 	audio_bar_idx = 0
 
 	@staticmethod
@@ -151,9 +166,10 @@ class TrackProgressLabel(Label):
 		if self.paused:  # 5 characters long
 			elements.append("  ⏸  ")
 		else:
+			animation = track_progress_animations[self.animation]
 			self.audio_bar_idx += 1
-			self.audio_bar_idx %= len(audio_bars)
-			bars = [audio_bars[self.audio_bar_idx - (bar_step * mult)] for mult in range(4, -1, -1)]
+			self.audio_bar_idx %= len(animation.chars)
+			bars = [animation.chars[self.audio_bar_idx - (animation.step * mult)] for mult in range(4, -1, -1)]
 			elements.append(''.join(bars))
 
 		elements.append(f"{pos_td} / {dur_td}")
@@ -192,6 +208,7 @@ class TrackProgress(ProgressBar):
 	duration: reactive[float] = reactive(120)
 	paused: reactive[bool] = reactive(False)
 	muted: reactive[bool] = reactive(False)
+	animation: reactive[str] = reactive("bars")
 
 	def set_track_pos(self, track_position: float, duration: float) -> None:
 		"""
@@ -213,6 +230,7 @@ class TrackProgress(ProgressBar):
 					duration=TrackProgress.duration,
 					paused=TrackProgress.paused,
 					muted=TrackProgress.muted,
+					animation=TrackProgress.animation,
 					)
 
 

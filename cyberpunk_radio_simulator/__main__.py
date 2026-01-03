@@ -64,7 +64,7 @@ def extract(install_dir: str | None = None, output_dir: str = "data", verbose: b
 	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.extractor import Extractor
 
-	config = Config("config.toml")
+	config = Config.load()
 	extractor = Extractor(config.get_install_dir(install_dir), config.get_output_dir(output_dir))
 
 	# From quickest to slowest
@@ -94,7 +94,7 @@ def play(station_name: str, output_dir: str = "data") -> None:
 	from cyberpunk_radio_simulator.data import stations
 	from cyberpunk_radio_simulator.simulator import Radio, RadioStation
 
-	config = Config("config.toml")
+	config = Config.load()
 
 	# TODO: it played a song twice
 
@@ -135,15 +135,9 @@ def gui(theme: str | None = None, output_dir: str = "data") -> None:
 	from cyberpunk_radio_simulator.config import Config
 	from cyberpunk_radio_simulator.gui import RadioportApp
 
-	config = Config("config.toml")
+	config = Config.load()
 
-	app = RadioportApp()
-	app.data_dir = PathPlus(config.get_output_dir(output_dir))
-
-	if theme:
-		app.theme = theme
-
-	app.run()
+	RadioportApp(config, PathPlus(config.get_output_dir(output_dir)), theme).run()
 
 
 @theme_option()
