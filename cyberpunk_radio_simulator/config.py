@@ -26,8 +26,6 @@ Config file handling.
 #  OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# TODO: use platformdirs and have file (and output data) in .config
-
 # stdlib
 from typing import Any
 
@@ -56,10 +54,17 @@ class GuiConfig(config.Config):
 	Configuration for the Textual-based GUI.
 	"""
 
+	#: Whether to resume the last station played when opening.
 	resume_last_station: bool | None = None
+
+	#: The last station played.
 	last_station: str | None = None
+
+	#: The Textual theme to use.
 	theme: str | None = None
-	playback_animation: str | None = None  # "bars" or "sine"
+
+	#: The playback animation style. Either ``"bars"`` for ``▄▇▆▃▂`` or ``"sine"`` for ``⠂⡀⠠⠈⠂``.
+	playback_animation: str | None = None
 
 	# TODO: window size/position?
 
@@ -197,9 +202,16 @@ class Config(config.Config):
 	Application configuration.
 	"""
 
+	#: Path to the Cyberpunk 2077 install directory.
 	install_dir: PathPlus | None = None
+
+	#: Path to the directory containing the extracted game files.
 	output_dir: PathPlus | None = None
+
+	#: Table for configuring notifications.
 	notifications: NotificationsConfig = config.subtable_field(NotificationsConfig)
+
+	#: Table for configuring the GUI.
 	gui: GuiConfig = config.subtable_field(GuiConfig)
 
 	#: The file the config was read from.
@@ -304,7 +316,5 @@ def find_config_file() -> PathPlus | None:
 
 		if directory == home_dir:
 			break
-
-	# TODO: use platformdirs config directory
 
 	return None
