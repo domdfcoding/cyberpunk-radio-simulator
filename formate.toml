@@ -27,31 +27,6 @@ lines_between_types = 0
 use_parentheses = true
 remove_redundant_aliases = true
 default_section = "THIRDPARTY"
-known_third_party = [
-    "click",
-    "consolekit",
-    "cp2077_extractor",
-    "cyberpunk_radio_extractor",
-    "dbus_next",
-    "dom_toml",
-    "domdf_python_tools",
-    "just_playback",
-    "moviepy",
-    "natsort",
-    "networkx",
-    "notify_rs",
-    "pillow",
-    "playsound3",
-    "textual",
-    "textual_image",
-    "textual_serve",
-    "textual_wrapper",
-    "typing_extensions",
-    "winrt_windows_media",
-    "winrt_windows_media_core",
-    "winrt_windows_media_playback",
-    "winrt_windows_ui_notifications",
-]
 known_first_party = [ "cyberpunk_radio_simulator",]
 
 [config]
