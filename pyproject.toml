@@ -46,7 +46,6 @@ package = "cyberpunk_radio_simulator"
 [tool.importcheck]
 always = [
     "cyberpunk_radio_simulator",
-    "cyberpunk_radio_simulator.media_control",
     "cyberpunk_radio_simulator.__main__",
     "cyberpunk_radio_simulator.config",
     "cyberpunk_radio_simulator.data",
@@ -82,14 +81,6 @@ reformat = true
 [tool.snippet-fmt.languages.ini]
 
 [tool.snippet-fmt.languages.json]
-
-[tool.dep_checker]
-allowed_unused = [
-    "winrt_windows_media",
-    "winrt_windows_media_core",
-    "winrt_windows_media_playback",
-    "winrt_windows_ui_notifications",
-]
 
 [tool.dep_checker.name_mapping]
 pillow = "PIL"

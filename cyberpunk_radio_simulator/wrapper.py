@@ -37,6 +37,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 # 3rd party
+from desktop_media_control import SIGRAISE
 from domdf_python_tools.typing import PathLike
 from textual_wrapper.keycodes import CTRL_P
 from textual_wrapper.types import MenuOption, Wrapper
@@ -44,7 +45,6 @@ from textual_wrapper.wrapper import gtk
 
 # this package
 from cyberpunk_radio_simulator.cli import get_subprocess_arguments
-from cyberpunk_radio_simulator.media_control import SIGRAISE
 
 if TYPE_CHECKING:
 	# 3rd party

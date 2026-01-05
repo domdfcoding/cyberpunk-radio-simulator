@@ -3,7 +3,7 @@ click>=8.3.1
 consolekit>=1.11.0
 cp2077-extractor>=0.3.0
 cyberpunk-radio-extractor@ git+https://github.com/domdfcoding/cyberpunk-radio-extractor.git
-dbus-next>=0.2.3
+desktop-media-control@ git+https://github.com/domdfcoding/desktop-media-control.git
 dom-toml[config]>=2.1.0
 domdf-python-tools>=3.10.0
 just-playback>=0.1.8
@@ -18,7 +18,3 @@ textual-image[textual]>=0.8.4
 textual-serve>=1.1.3
 textual-wrapper>=0.4.0
 typing-extensions>=4.15.0
-winrt-windows-media>=3.2.1; sys_platform == "win32"
-winrt-windows-media-core>=3.2.1; sys_platform == "win32"
-winrt-windows-media-playback>=3.2.1; sys_platform == "win32"
-winrt-windows-ui-notifications>=3.2.1; sys_platform == "win32"

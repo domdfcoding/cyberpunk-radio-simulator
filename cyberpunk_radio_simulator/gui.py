@@ -34,6 +34,8 @@ from typing import NamedTuple, cast
 
 # 3rd party
 import textual_wrapper.child
+from desktop_media_control import MediaControl
+from desktop_media_control.player import TrackMetadata
 from domdf_python_tools.paths import PathPlus
 from just_playback import Playback  # type: ignore[import-untyped]
 from textual import events, work
@@ -50,8 +52,6 @@ from cyberpunk_radio_simulator.config import Config
 from cyberpunk_radio_simulator.data import StationData, stations
 from cyberpunk_radio_simulator.events import AdBreak, Event, Tune
 from cyberpunk_radio_simulator.logos import apply_colour, get_logo_tight
-from cyberpunk_radio_simulator.media_control import MediaControl
-from cyberpunk_radio_simulator.media_control.player import TrackMetadata
 from cyberpunk_radio_simulator.simulator import AsyncRadio, RadioStation
 from cyberpunk_radio_simulator.widgets import (
 		TC,
@@ -490,7 +490,7 @@ class RadioportApp(App):
 		Setup desktop media controls.
 		"""
 
-		self.media_control = MediaControl(self)
+		self.media_control = MediaControl(self, "Radioport")
 
 	def setup_radio(self) -> None:
 		"""
