@@ -74,7 +74,7 @@ def setup_wrapper(theme: str | None = None, output_directory: PathLike = "data")
 					MenuOption("Next Station", '>'),
 					],
 			menu_options={"_File": [MenuOption("Command _Palette", CTRL_P)]},
-			wrapper_window_cls=WrapperWindow
+			wrapper_window_cls=WrapperWindow,
 			)
 
 

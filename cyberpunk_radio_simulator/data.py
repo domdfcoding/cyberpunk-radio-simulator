@@ -129,7 +129,8 @@ stations: dict[str, StationData] = {
 				StationData("103.5 Radio PEBKAC"),
 				StationData("106.9 30 Principales"),
 				StationData(
-						"107.3 Morro Rock Radio", dj=djs["Max Mike"]
+						"107.3 Morro Rock Radio",
+						dj=djs["Max Mike"],
 						),  # TODO: filter out (and later program separately) the song intros/outros. TODO: played 274 as link on its own out of context
 				StationData("107.5 Dark Star"),
 				]
