@@ -53,6 +53,18 @@ from cyberpunk_radio_simulator.notifications import NotificationSender
 __all__ = ["AsyncRadio", "Radio", "RadioStation"]
 
 
+def random_third_chance() -> bool:
+	"""
+	Like ``random.getrandbits(1)`` but returns truthy 1/3 of the time.
+	"""
+
+	result = random.getrandbits(2)
+	if result == 3:
+		return random_third_chance()
+	else:
+		return not result
+
+
 class RadioStation(Directories):
 	"""
 	Emits events to simulate playing a radio station.
@@ -198,7 +210,7 @@ class RadioStation(Directories):
 		self._last_non_tune_action = Jingle
 
 		# Unless forced, either start with a jingle or part way through the song (1:2)
-		start_with_jingle = force_jingle or not random.getrandbits(2)
+		start_with_jingle = force_jingle or random_third_chance()
 		if not self.station.has_jingles:
 			# Either way we can't do it if there are no jingles.
 			start_with_jingle = False
@@ -242,7 +254,7 @@ class RadioStation(Directories):
 				yield from self.get_link()
 			elif option is AdBreak:
 				yield from self.get_ad_break()
-				if not random.getrandbits(2):  # So happens 1/3 of the time
+				if random_third_chance():  # So happens 1/3 of the time
 					yield from self.get_jingle()
 			elif option is Jingle:
 				yield from self.get_jingle()
