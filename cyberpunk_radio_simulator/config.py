@@ -305,7 +305,7 @@ def find_config_file() -> PathPlus | None:
 					appname="radioport",
 					appauthor="domdfcoding",
 					ensure_exists=False,
-					)
+					),
 			)
 
 	for directory in [cwd, *cwd.parents, config_dir]:
