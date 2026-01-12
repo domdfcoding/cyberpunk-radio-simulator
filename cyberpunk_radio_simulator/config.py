@@ -118,7 +118,7 @@ class GuiConfig(config.Config):
 			return None
 
 		if not isinstance(theme, str):
-			raise ValueError(f"Theme must be a string.")
+			raise ValueError("Theme must be a string.")
 
 		return theme
 
@@ -186,7 +186,7 @@ class NotificationsConfig(config.Config):
 		notification_urgency = override or self.urgency or default
 
 		if notification_urgency is None:
-			raise ValueError(f"Urgency cannot be None")
+			raise ValueError("Urgency cannot be None")
 
 		notification_urgency = notification_urgency.lower()
 
@@ -226,7 +226,7 @@ class Config(config.Config):
 		file = find_config_file()
 
 		if not file:
-			raise FileNotFoundError(f"Config file 'config.toml' or 'radioport.toml' not found.")
+			raise FileNotFoundError("Config file 'config.toml' or 'radioport.toml' not found.")
 
 		self = cls.from_file(file)
 		self.config_file = file
@@ -276,7 +276,7 @@ class Config(config.Config):
 		path = override or self.output_dir or default
 
 		if path is None:
-			raise ValueError(f"Invalid output/data directory: None")
+			raise ValueError("Invalid output/data directory: None")
 
 		path_p = PathPlus(path)
 
