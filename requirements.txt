@@ -2,8 +2,8 @@ attrs>=25.4.0
 click>=8.3.1
 consolekit>=1.11.0
 cp2077-extractor>=0.3.0
-cyberpunk-radio-extractor@ git+https://github.com/domdfcoding/cyberpunk-radio-extractor.git
-desktop-media-control@ git+https://github.com/domdfcoding/desktop-media-control.git
+cyberpunk-radio-extractor @ git+https://github.com/domdfcoding/cyberpunk-radio-extractor.git
+desktop-media-control @ git+https://github.com/domdfcoding/desktop-media-control.git
 dom-toml[config]>=2.1.0
 domdf-python-tools>=3.10.0
 just-playback>=0.1.8
